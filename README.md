@@ -1,6 +1,6 @@
 # StrikeZone
 
-Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit: the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene.
+Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene) and the **hosting-infra** unit (one CDK v2 stack that serves the bundle from a private S3 bucket through CloudFront; see [infra/README.md](infra/README.md)).
 
 ## Requirements
 
@@ -18,13 +18,15 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 | `npm run test:coverage`  | Vitest with v8 coverage; fails below 80 % lines on `src/core/**`                                 |
 | `npm run check:imports`  | The import-graph and ring-lint tests on their own (`tests/arch`)                                 |
 | `npm run build`          | `vite build` into `dist/`                                                                        |
+| `npm run build:web`      | `vite build`; called by CDK local bundling with `--outDir` during `cdk deploy`                   |
+| `npm run synth`          | Infra typecheck, then offline `cdk synth --strict` on the prebuilt `dist/` (no credentials)      |
 | `npm run check:licences` | Licence, pinning, asset, secret and `dist/` checks; writes `reports/licences.json`               |
 | `npm run audit`          | Advisory `npm audit` of production dependencies into `reports/audit.json` (not part of the gate) |
-| `npm run verify`         | The gate: `lint && typecheck && test:coverage && build && check:licences`, failing fast          |
+| `npm run verify`         | The gate: `lint && typecheck && test:coverage && build && synth && check:licences`, failing fast |
 
 ## Verify gate
 
-`npm run verify` runs offline after `npm ci`, needs no credentials and makes no AWS calls. Steps are only ever **appended**: hosting-infra adds `SZ_SKIP_WEB_BUILD=1 cdk synth` after `build`, and app-shell appends `check:seams`. `tests/scripts/verify-script.test.ts` fails if the chain uses anything but `&&` or reorders the foundation steps.
+`npm run verify` runs offline after `npm ci`, needs no credentials and makes no AWS calls. Steps are only ever **appended**: hosting-infra inserted `synth` (prebuilt `cdk synth --strict`) after `build`, and app-shell appends `check:seams`. Deploy (`npx cdk deploy --all`) is a separate, manual, credentialed step described in [infra/README.md](infra/README.md). `tests/scripts/verify-script.test.ts` fails if the chain uses anything but `&&` or reorders the foundation steps.
 
 ## Code layout and rings
 
