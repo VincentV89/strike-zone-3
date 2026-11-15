@@ -1,0 +1,9 @@
+node_modules/
+dist/
+cdk.out/
+coverage/
+reports/
+.kiro-data/
+.aidlc/
+.kiro/
+package-lock.json

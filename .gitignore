@@ -1,0 +1,17 @@
+# Dependencies and build outputs (node_modules may be a symlink in the runtime)
+node_modules/
+node_modules
+dist/
+cdk.out/
+coverage/
+reports/
+*.log
+
+# AI-DLC runtime data
+.kiro-data/
+
+# Secrets and local credentials (SEC-F-08)
+.env*
+*.pem
+.aws/
+cdk.context.json
