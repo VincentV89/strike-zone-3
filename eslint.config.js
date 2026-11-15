@@ -42,6 +42,96 @@ const ENV_RESTRICTION = {
   message: 'Only import.meta.env.MODE, DEV and PROD may be read in src/ (SD-F-09).',
 };
 
+/** DOM test libraries never ship (SD-H-06). */
+const TEST_DOM_IMPORTS = {
+  group: ['happy-dom', 'happy-dom/*', 'jsdom', 'jsdom/*'],
+  message: 'DOM test libraries are for tests only (SD-H-06).',
+};
+
+/** Styling and handler attributes in src/ui (SD-H-02). Use CSSOM or classList. */
+const UI_SYNTAX = [
+  ENV_RESTRICTION,
+  {
+    selector:
+      "CallExpression[callee.property.name='setAttribute'][arguments.0.value=/^(style|on)/i]",
+    message: 'Use CSSOM or classList, not style or on* attributes (SD-H-02).',
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='setAttributeNS'][arguments.1.value=/^(style|on)/i]",
+    message: 'Use CSSOM or classList, not style or on* attributes (SD-H-02).',
+  },
+  {
+    selector: "CallExpression[callee.property.name='setAttribute'][arguments.0.type!='Literal']",
+    message: 'Attribute names must be string literals (SD-H-02).',
+  },
+  {
+    selector: "CallExpression[callee.property.name='setAttributeNS'][arguments.1.type!='Literal']",
+    message: 'Attribute names must be string literals (SD-H-02).',
+  },
+];
+
+/** Extra syntax bans for the HUD (SD-H-02): no URL attributes, no style text. */
+const HUD_SYNTAX = [
+  ...UI_SYNTAX,
+  {
+    selector:
+      "CallExpression[callee.property.name='setAttribute'][arguments.0.value=/^((xlink:)?href|src)$/]",
+    message: 'The HUD sets no URL-bearing attributes (SD-H-02).',
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='setAttributeNS'][arguments.1.value=/^((xlink:)?href|src)$/]",
+    message: 'The HUD sets no URL-bearing attributes (SD-H-02).',
+  },
+  {
+    selector: "AssignmentExpression[left.property.name='cssText']",
+    message: 'cssText bypasses the node cache and is a style-text sink (SD-H-02).',
+  },
+];
+
+/** Capabilities the HUD has no reason to use (SD-H-03). */
+const HUD_BANNED_NAMES = [
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'EventSource',
+  'localStorage',
+  'sessionStorage',
+  'indexedDB',
+  'setTimeout',
+  'setInterval',
+  'requestAnimationFrame',
+  'requestIdleCallback',
+  'queueMicrotask',
+  'open',
+  'postMessage',
+  'getComputedStyle',
+];
+const HUD_BANNED_GLOBALS = HUD_BANNED_NAMES.map((name) => ({
+  name,
+  message: `The HUD must not use ${name} (SD-H-03).`,
+}));
+const HUD_RESTRICTED_PROPERTIES = [
+  ...HUD_BANNED_NAMES.map((property) => ({
+    object: 'window',
+    property,
+    message: `The HUD must not use window.${property} (SD-H-03).`,
+  })),
+  { object: 'navigator', property: 'sendBeacon', message: 'The HUD sends nothing (SD-H-03).' },
+  ...[
+    'addEventListener',
+    'offsetWidth',
+    'offsetHeight',
+    'clientWidth',
+    'clientHeight',
+    'getBoundingClientRect',
+  ].map((property) => ({
+    property,
+    message: `The HUD registers no listeners and reads no layout: ${property} (SD-H-03).`,
+  })),
+];
+
 const SIM_BANNED_GLOBALS = [
   'window',
   'document',
@@ -75,7 +165,12 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['src/core/__probe__.ts', 'src/app/__probe__.ts'],
+          allowDefaultProject: [
+            'src/core/__probe__.ts',
+            'src/app/__probe__.ts',
+            'src/ui/__probe__.ts',
+            'src/ui/hud/__probe__.ts',
+          ],
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -103,6 +198,7 @@ export default tseslint.config(
       '@typescript-eslint/no-implied-eval': 'error',
       'no-restricted-properties': ['error', ...SRC_RESTRICTED_PROPERTIES],
       'no-restricted-syntax': ['error', ENV_RESTRICTION],
+      'no-restricted-imports': ['error', { patterns: [TEST_DOM_IMPORTS] }],
     },
   },
   {
@@ -122,11 +218,30 @@ export default tseslint.config(
               message:
                 'Simulation-ring code must not import adapter-ring modules (req-headless-simulation).',
             },
+            TEST_DOM_IMPORTS,
           ],
         },
       ],
       'no-restricted-globals': ['error', ...SIM_BANNED_GLOBALS],
       'no-restricted-properties': ['error', ...SIM_RESTRICTED_PROPERTIES],
+    },
+  },
+  {
+    // Flat config replaces rule options instead of merging them, so every
+    // narrower block spreads the src/** lists it would otherwise drop.
+    files: ['src/ui/**/*.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...UI_SYNTAX] },
+  },
+  {
+    files: ['src/ui/hud/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...HUD_SYNTAX],
+      'no-restricted-globals': ['error', ...HUD_BANNED_GLOBALS],
+      'no-restricted-properties': [
+        'error',
+        ...SRC_RESTRICTED_PROPERTIES,
+        ...HUD_RESTRICTED_PROPERTIES,
+      ],
     },
   },
   prettier,
