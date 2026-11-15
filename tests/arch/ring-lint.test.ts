@@ -1,0 +1,79 @@
+/**
+ * Ring-lint and hygiene probes (story-walking-skeleton AC4, QS-SEC-4).
+ * Fixtures are linted with lintText at virtual paths, so they never exist
+ * as real files under src/.
+ */
+import { ESLint } from 'eslint';
+import { describe, expect, it } from 'vitest';
+
+const eslint = new ESLint();
+
+async function ruleIds(code: string, filePath: string): Promise<string[]> {
+  const [result] = await eslint.lintText(code, { filePath });
+  const messages = result?.messages ?? [];
+  const fatal = messages.find((m) => m.fatal === true);
+  if (fatal !== undefined) throw new Error(`ESLint could not parse the probe: ${fatal.message}`);
+  return messages.map((m) => m.ruleId ?? 'unknown');
+}
+
+describe('ESLint ring rules', () => {
+  it('fails a sim-ring file that imports three and touches document', async () => {
+    const ids = await ruleIds(
+      "import * as THREE from 'three';\nexport const t = document.title + String(THREE.REVISION);\n",
+      'src/core/__probe__.ts',
+    );
+    expect(ids).toContain('no-restricted-imports');
+    expect(ids).toContain('no-restricted-globals');
+  });
+
+  it('fails Math.random and Date in the sim ring', async () => {
+    const ids = await ruleIds(
+      'export const r = Math.random();\nexport const d = Date.now();\n',
+      'src/core/__probe__.ts',
+    );
+    expect(ids).toContain('no-restricted-properties');
+    expect(ids).toContain('no-restricted-globals');
+  });
+
+  it('fails a sim-ring relative import into an adapter directory', async () => {
+    const ids = await ruleIds(
+      "export { start } from '../app/main';\nexport { x } from '../ui/hud/vitals';\n",
+      'src/core/__probe__.ts',
+    );
+    expect(ids.filter((id) => id === 'no-restricted-imports')).toHaveLength(2);
+  });
+
+  it('passes clean kernel-style code in the sim ring', async () => {
+    expect(
+      await ruleIds('export const half = (x: number): number => x / 2;\n', 'src/core/__probe__.ts'),
+    ).toEqual([]);
+  });
+});
+
+describe('ESLint browser hygiene rules (all of src/)', () => {
+  it('fails innerHTML and eval in adapter code', async () => {
+    const ids = await ruleIds(
+      "export function f(el: HTMLElement, x: string): void {\n  el.innerHTML = x;\n  eval('1');\n}\n",
+      'src/app/__probe__.ts',
+    );
+    expect(ids).toContain('no-restricted-properties');
+    expect(ids).toContain('no-eval');
+  });
+
+  it('fails import.meta.env reads other than MODE, DEV and PROD', async () => {
+    const ids = await ruleIds(
+      'export const a = import.meta.env.VITE_SECRET as unknown;\nexport const b = import.meta.env.DEV;\n',
+      'src/app/__probe__.ts',
+    );
+    expect(ids.filter((id) => id === 'no-restricted-syntax')).toHaveLength(1);
+  });
+
+  it('allows three in the adapter ring', async () => {
+    expect(
+      await ruleIds(
+        "import { Scene } from 'three';\nexport const s = new Scene();\n",
+        'src/app/__probe__.ts',
+      ),
+    ).toEqual([]);
+  });
+});

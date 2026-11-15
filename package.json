@@ -1,0 +1,45 @@
+{
+  "name": "strikezone",
+  "version": "0.1.0",
+  "private": true,
+  "description": "StrikeZone: single-player browser 3D tactical FPS against CPU bots.",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "scripts": {
+    "dev": "vite",
+    "lint": "eslint . --max-warnings 0 && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "check:imports": "vitest run tests/arch",
+    "build": "vite build",
+    "check:licences": "node scripts/check-licences.ts --require-dist",
+    "audit": "mkdir -p reports && npm audit --omit=dev --audit-level=high --json > reports/audit.json || true",
+    "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run check:licences"
+  },
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "@types/three": "0.187.0",
+    "@vitest/coverage-v8": "5.1.0",
+    "aws-cdk": "2.1148.1",
+    "aws-cdk-lib": "2.277.0",
+    "constructs": "10.8.1",
+    "eslint": "10.15.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.14.0",
+    "prettier": "3.10.1",
+    "spdx-expression-parse": "5.0.0",
+    "spdx-satisfies": "6.0.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}
