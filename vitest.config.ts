@@ -23,6 +23,7 @@ export default defineConfig({
         // Per-glob floors; later units add their own globs at the same floor (BR-F-44).
         'src/core/**': { lines: 80 },
         'src/maps/**': { lines: 80 }, // BR-M-92
+        'src/ui/hud/**': { lines: 80 },
       },
     },
   },

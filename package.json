@@ -16,9 +16,11 @@
     "test:coverage": "vitest run --coverage",
     "check:imports": "vitest run tests/arch",
     "build": "vite build",
+    "build:web": "vite build",
+    "synth": "tsc -p tsconfig.infra.json && CDK_DISABLE_CLI_TELEMETRY=true SZ_SKIP_WEB_BUILD=1 cdk synth --quiet --strict --no-notices",
     "check:licences": "node scripts/check-licences.ts --require-dist",
     "audit": "mkdir -p reports && npm audit --omit=dev --audit-level=high --json > reports/audit.json || true",
-    "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run check:licences"
+    "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run synth && npm run check:licences"
   },
   "dependencies": {
     "three": "0.187.0"
@@ -34,6 +36,7 @@
     "eslint": "10.15.0",
     "eslint-config-prettier": "10.1.8",
     "globals": "17.14.0",
+    "happy-dom": "21.0.4",
     "prettier": "3.10.1",
     "spdx-expression-parse": "5.0.0",
     "spdx-satisfies": "6.0.1",
