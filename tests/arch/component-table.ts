@@ -49,7 +49,8 @@ export const COMPONENTS: readonly ComponentSpec[] = [
     id: 'navigation',
     ring: 'sim',
     prefixes: ['src/nav'],
-    deps: { [core]: 'R', 'map-data': 'T', 'collision-world': 'R' },
+    // map-data is R: src/nav reads WALKABLE_KINDS and MAP_RULES at runtime (FD-CN-01).
+    deps: { [core]: 'R', 'map-data': 'R', 'collision-world': 'R' },
   },
   {
     id: 'player-controller',

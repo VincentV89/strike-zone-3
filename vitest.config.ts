@@ -6,8 +6,10 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     pool: 'forks',
     maxWorkers: 2, // 2-vCPU runtime (BR-F-43)
-    execArgv: ['--expose-gc'], // allocation probe in tests/core/kernel-bench.test.ts
-    testTimeout: 30_000,
+    execArgv: ['--expose-gc'], // allocation probes in tests/core and tests/bench
+    // The first typed ESLint probe in tests/arch builds the whole TS program; under v8
+    // coverage on 2 vCPU that takes ~32 s once src/physics and src/nav exist.
+    testTimeout: 60_000,
     typecheck: {
       enabled: true,
       include: ['tests/**/*.test-d.ts'],
@@ -24,6 +26,8 @@ export default defineConfig({
         'src/core/**': { lines: 80 },
         'src/maps/**': { lines: 80 }, // BR-M-92
         'src/ui/hud/**': { lines: 80 },
+        'src/physics/**': { lines: 80 }, // BR-CN-97
+        'src/nav/**': { lines: 80 }, // BR-CN-97
       },
     },
   },

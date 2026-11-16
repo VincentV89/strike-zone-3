@@ -133,31 +133,41 @@ const HUD_RESTRICTED_PROPERTIES = [
 ];
 
 const SIM_BANNED_GLOBALS = [
-  'window',
-  'document',
-  'localStorage',
-  'sessionStorage',
-  'navigator',
-  'performance',
-  'requestAnimationFrame',
-  'setTimeout',
-  'setInterval',
-  'Date',
-].map((name) => ({ name, message: `Simulation-ring code must not read ${name} (BR-F-01).` }));
+  ...[
+    'window',
+    'document',
+    'localStorage',
+    'sessionStorage',
+    'navigator',
+    'performance',
+    'requestAnimationFrame',
+    'setTimeout',
+    'setInterval',
+    'Date',
+  ].map((name) => ({ name, message: `Simulation-ring code must not read ${name} (BR-F-01).` })),
+  // Network and global-object bans promoted from the maps block to the whole
+  // sim ring (OQ-M-NFR-1 = A, SD-CN-01).
+  ...[
+    'fetch',
+    'XMLHttpRequest',
+    'WebSocket',
+    'EventSource',
+    'indexedDB',
+    'caches',
+    'globalThis',
+    'self',
+    'importScripts',
+  ].map((name) => ({
+    name,
+    message: `Simulation-ring code must not read ${name} (BR-F-01, SEC-CN-01).`,
+  })),
+];
 
 /** Extra bans for map data: maps are compiled-in data, never loaded at runtime (SEC-M-01). */
-const MAPS_BANNED_GLOBALS = [
-  'fetch',
-  'XMLHttpRequest',
-  'WebSocket',
-  'EventSource',
-  'indexedDB',
-  'caches',
-  'structuredClone',
-  'globalThis',
-  'self',
-  'importScripts',
-].map((name) => ({ name, message: `Map data must not use ${name} (SEC-M-01).` }));
+const MAPS_BANNED_GLOBALS = ['structuredClone'].map((name) => ({
+  name,
+  message: `Map data must not use ${name} (SEC-M-01).`,
+}));
 
 export default tseslint.config(
   {
@@ -183,6 +193,8 @@ export default tseslint.config(
             'src/core/__probe__.ts',
             'src/app/__probe__.ts',
             'src/maps/__probe__.ts',
+            'src/physics/__probe__.ts',
+            'src/nav/__probe__.ts',
             'src/ui/__probe__.ts',
             'src/ui/hud/__probe__.ts',
           ],
