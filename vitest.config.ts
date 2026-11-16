@@ -10,6 +10,9 @@ export default defineConfig({
     // The first typed ESLint probe per lint test file builds the whole TS program; under v8
     // coverage on 2 vCPU that takes ~32 s once src/physics and src/nav exist.
     testTimeout: 60_000,
+    // The json reporter feeds `npm run report` (TS-VE-03); verify itself is unchanged.
+    reporters: ['default', 'json'],
+    outputFile: { json: 'reports/vitest-results.json' },
     typecheck: {
       enabled: true,
       include: ['tests/**/*.test-d.ts'],
@@ -17,7 +20,9 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts'],
+      // scripts/verification is the honesty logic of the final report (TS-VE-14); the
+      // entry points scripts/smoke.ts and scripts/report.ts stay thin and uncounted.
+      include: ['src/**/*.ts', 'scripts/verification/**/*.ts'],
       // gl-host.ts is the WebGL boundary, covered by the manual browser check (NFR-P-Q2).
       // main.ts and pointer-lock.ts are the browser boundary of app-shell (manual-pending checks).
       exclude: [
@@ -50,6 +55,7 @@ export default defineConfig({
         'src/app/**': { lines: 80 }, // app-shell (business-logic-model-app-shell §15)
         'src/input/**': { lines: 80 },
         'src/dev/**': { lines: 80 },
+        'scripts/verification/**': { lines: 80 }, // TS-VE-14
       },
     },
   },
