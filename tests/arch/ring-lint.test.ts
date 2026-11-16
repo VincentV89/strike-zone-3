@@ -116,3 +116,47 @@ describe('ESLint map-data block (SD-M-01, SD-M-02)', () => {
     );
   });
 });
+
+describe('sim-ring network and global bans in physics and nav (SD-CN-01, SD-CN-02)', () => {
+  const cases: [string, string][] = [
+    ["export const a = fetch('x');\n", 'no-restricted-globals'],
+    ['export const a = globalThis;\n', 'no-restricted-globals'],
+    ['export const a = self;\n', 'no-restricted-globals'],
+    ['export const a = new WebSocket(String(1));\n', 'no-restricted-globals'],
+    ['export const a = Date.now();\n', 'no-restricted-globals'],
+    ['export const a = Math.random();\n', 'no-restricted-properties'],
+    ['export const a = setTimeout(() => 0);\n', 'no-restricted-globals'],
+    ['export const a = performance.now();\n', 'no-restricted-globals'],
+    [
+      "export function f(el: { innerHTML: string }): void {\n  el.innerHTML = '';\n}\n",
+      'no-restricted-properties',
+    ],
+    ['export const a = import.meta.env.VITE_X as unknown;\n', 'no-restricted-syntax'],
+    ["import { Scene } from 'three';\nexport const s = new Scene();\n", 'no-restricted-imports'],
+  ];
+
+  for (const probe of ['src/physics/__probe__.ts', 'src/nav/__probe__.ts']) {
+    it.each(cases)(`rejects %j in ${probe} with exactly one %s error`, async (code, rule) => {
+      const ids = await ruleIds(code, probe);
+      expect(ids.filter((id) => id === rule)).toHaveLength(1);
+    });
+
+    it(`passes plain geometry code in ${probe}`, async () => {
+      expect(
+        await ruleIds(
+          'export const len = (x: number, z: number): number => Math.hypot(x, z);\n',
+          probe,
+        ),
+      ).toEqual([]);
+    });
+  }
+
+  it('still rejects fetch in src/maps after the move, now with the sim-ring message', async () => {
+    const [result] = await eslint.lintText("export const a = fetch('x');\n", {
+      filePath: 'src/maps/__probe__.ts',
+    });
+    const messages = (result?.messages ?? []).filter((m) => m.ruleId === 'no-restricted-globals');
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.message).toContain('SEC-CN-01');
+  });
+});
