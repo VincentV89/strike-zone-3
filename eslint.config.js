@@ -391,7 +391,13 @@ export default tseslint.config(
             'src/weapons/__probe__.ts',
             'src/combat/__probe__.ts',
             'src/audio/__probe__.ts',
+            'src/ai/perception/__probe__.ts',
+            'src/ai/locomotion/__probe__.ts',
+            'src/ai/brain/__probe__.ts',
           ],
+          // The bot-ai probes make one ring-lint process open more than the default 8
+          // default-project files (BR-AI-91, SD-AI-05).
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 24,
         },
         tsconfigRootDir: import.meta.dirname,
       },

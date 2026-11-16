@@ -38,6 +38,7 @@ export default defineConfig({
         'src/weapons/**': { lines: 80 }, // TS-PC-09
         'src/combat/**': { lines: 80 }, // TS-PC-09
         'src/audio/**': { lines: 80 }, // BR-AU-92
+        'src/ai/**': { lines: 80 }, // BR-AI-91
       },
     },
   },
