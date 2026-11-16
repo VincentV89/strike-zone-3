@@ -7,7 +7,9 @@ export default defineConfig({
     pool: 'forks',
     maxWorkers: 2, // 2-vCPU runtime (BR-F-43)
     execArgv: ['--expose-gc'], // allocation probe in tests/core/kernel-bench.test.ts
-    testTimeout: 30_000,
+    // The first typed ESLint probe per lint test file builds the whole TS
+    // program (~30 s under coverage on 2 vCPU); same value as the collision-nav lane.
+    testTimeout: 60_000,
     typecheck: {
       enabled: true,
       include: ['tests/**/*.test-d.ts'],
@@ -28,6 +30,7 @@ export default defineConfig({
         'src/persistence/**': { lines: 80 },
         'src/ui/screens/**': { lines: 80 },
         'src/ui/components/**': { lines: 80 },
+        'src/audio/**': { lines: 80 }, // BR-AU-92
       },
     },
   },
