@@ -182,8 +182,13 @@ export interface HarnessMetrics {
   reactionViolations: number;
   /** Ticks from first sight to first shot, per bot (-1 = no shot yet). */
   firstShotDelay: number[];
-  /** Longest BR-AI-66 stuck span per bot (ticks). */
+  /** Longest BR-AI-66 stuck span per bot (ticks), across watchdog cycles. */
   maxStuckSpan: number[];
+  /**
+   * Longest stuck span per bot within one watchdog episode: the span restarts
+   * whenever the watchdog finishes its escalation and reports `stuck`.
+   */
+  maxEpisodeSpan: number[];
   /** Patrol goals in order, per bot (node keys). */
   patrolGoals: string[][];
   /** Bot shots that damaged the player. */
@@ -243,6 +248,7 @@ interface Bot {
   stuckRef: Vec3;
   stuckRefTick: number;
   stuckStart: number;
+  episodeStart: number;
 }
 
 const IDLE_INTENT: BotIntent = Object.freeze({
@@ -411,6 +417,7 @@ export function createHarness(o: HarnessOptions): Harness {
       stuckRef: vec3(sp.pos.x, sp.pos.y, sp.pos.z),
       stuckRefTick: 0,
       stuckStart: -1,
+      episodeStart: -1,
     };
     bots.push(bot);
   }
@@ -436,6 +443,7 @@ export function createHarness(o: HarnessOptions): Harness {
     reactionViolations: 0,
     firstShotDelay: bots.map(() => -1),
     maxStuckSpan: bots.map(() => 0),
+    maxEpisodeSpan: bots.map(() => 0),
     patrolGoals: bots.map(() => []),
     playerDamage: 0,
     maxLosPerSense: 0,
@@ -616,15 +624,19 @@ export function createHarness(o: HarnessOptions): Harness {
   };
 
   const updateStuckMetric = (b: Bot, i: number): void => {
+    if (b.motion.status === 'stuck') b.episodeStart = -1;
     if (tick - b.stuckRefTick < 90) return;
     const m = b.motion;
     const active = m.goal !== null && m.status !== 'arrived' && m.status !== 'idle';
     const progress = Math.hypot(m.pos.x - b.stuckRef.x, m.pos.z - b.stuckRef.z);
     if (active && progress < 0.3) {
       if (b.stuckStart < 0) b.stuckStart = b.stuckRefTick;
+      if (b.episodeStart < 0) b.episodeStart = b.stuckRefTick;
       metrics.maxStuckSpan[i] = Math.max(metrics.maxStuckSpan[i] ?? 0, tick - b.stuckStart);
+      metrics.maxEpisodeSpan[i] = Math.max(metrics.maxEpisodeSpan[i] ?? 0, tick - b.episodeStart);
     } else {
       b.stuckStart = -1;
+      b.episodeStart = -1;
     }
     copy(m.pos, b.stuckRef);
     b.stuckRefTick = tick;

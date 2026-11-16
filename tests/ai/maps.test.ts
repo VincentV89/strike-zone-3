@@ -4,7 +4,16 @@
  * and 3), H-2 no wall crossing (BR-AI-60, criterion 2) and H-3 unstuck
  * (BR-AI-66, story-bots-unstuck criterion 1). These are harness-level only:
  * the stories close in game-simulation (BR-AI-93).
+ *
+ * H-3 deviation (requester decision, 2026-11-16, option A): collision-nav's
+ * sweepClear accepts segments that moveCapsule blocks at two ramp sides
+ * (Desert ramp 1, Warehouse ramp 0), so pulled paths can lead into a corner
+ * and only the watchdog snap frees the bot. The BR-AI-66 300-tick span is
+ * therefore reported, not asserted. The test asserts that every watchdog
+ * episode resolves within 600 ticks (4 windows of 90 plus margin) and that no
+ * snap fails. The defect is handed to collision-nav / game-simulation.
  */
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { MapId } from '../../src/contracts';
 import { createHarness, prepareMap } from './harness';
@@ -52,7 +61,7 @@ describe.each(MAPS)('%s', (map) => {
   );
 
   it(
-    'H-2 and H-3: twenty bots for 5 minutes never enter a solid and are never stuck for 5 s',
+    'H-2 and H-3: twenty bots for 5 minutes never enter a solid, and every stuck episode resolves',
     () => {
       const h = createHarness({
         map,
@@ -97,13 +106,22 @@ describe.each(MAPS)('%s', (map) => {
         }
       }
       expect(inside).toEqual([]);
-      const worst = Math.max(...h.metrics.maxStuckSpan);
-      expect(worst).toBeLessThan(300);
+      const spans = h.metrics.maxStuckSpan;
+      const worst = Math.max(...spans);
+      const worstEpisode = Math.max(...h.metrics.maxEpisodeSpan);
       const counts = h.diag.snapshot();
-      // reported, not asserted: watchdog outcomes on this map
-      console.log(
-        `${map}: worst stuck span ${worst} ticks, stuck-snap ${counts['ai/stuck-snap'] ?? 0}, stuck-unresolved ${counts['ai/stuck-unresolved'] ?? 0}`,
-      );
+      const row = {
+        worstStuckSpanTicks: worst,
+        botsAtOrOver300: spans.filter((x) => x >= 300).length,
+        worstEpisodeSpanTicks: worstEpisode,
+        stuckSnap: counts['ai/stuck-snap'] ?? 0,
+        stuckUnresolved: counts['ai/stuck-unresolved'] ?? 0,
+      };
+      mkdirSync('reports', { recursive: true });
+      writeFileSync(`reports/bot-ai-stuck-${map}.json`, `${JSON.stringify(row, null, 2)}\n`);
+      console.log(`${map}: ${JSON.stringify(row)}`);
+      expect(worstEpisode).toBeLessThan(600);
+      expect(row.stuckUnresolved).toBe(0);
     },
     LONG,
   );

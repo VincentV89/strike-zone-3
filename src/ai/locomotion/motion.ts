@@ -38,6 +38,7 @@ export function createBotMotion(id: EntityId, spawn: Readonly<Vec3>, yaw: number
     stage: 0,
     repaths: 0,
     progressRefTick: 0,
+    progressRefRemaining: -1,
     progressRef: vec3(spawn.x, spawn.y, spawn.z),
     nudging: false,
     dest: vec3(),
@@ -205,6 +206,7 @@ function onPathEnd(m: BotMotionState): void {
   }
   if (m.nudging) {
     m.nudging = false;
+    m.progressRefRemaining = -1; // measure the goal path afresh; the stage is kept
     if (m.goal !== null) copy(m.goal, m.dest);
     m.repath = true;
     return;

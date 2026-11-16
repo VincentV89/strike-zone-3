@@ -1,6 +1,6 @@
 /**
  * Stuck watchdog (BR-AI-65, FD-AI-Q2). Runs only while moving. Each 90-tick
- * window with less than 0.3 m xz progress escalates: repath, repath, nudge to
+ * window with less than 0.3 m of path progress escalates: repath, repath, nudge to
  * the nearest node, then snap to that node (only when it is at most 1.5 m away
  * and the standing capsule fits) and report `stuck` for one decide cycle.
  */
@@ -32,17 +32,47 @@ function snap(m: BotMotionState, ctx: LocoContext): void {
   }
 }
 
+/** Remaining xz path length: to the current waypoint, then along the kept waypoints. */
+function remaining(m: BotMotionState): number {
+  const p = m.path;
+  let i = m.waypoint;
+  if (i >= m.pathLen) return 0;
+  let d = Math.hypot((p[3 * i] ?? 0) - m.pos.x, (p[3 * i + 2] ?? 0) - m.pos.z);
+  for (i++; i < m.pathLen; i++) {
+    d += Math.hypot(
+      (p[3 * i] ?? 0) - (p[3 * i - 3] ?? 0),
+      (p[3 * i + 2] ?? 0) - (p[3 * i - 1] ?? 0),
+    );
+  }
+  return d;
+}
+
+/**
+ * Progress is the reduction in remaining path length over the window, not net
+ * displacement: a bot sliding back and forth along a ramp side moves a metre
+ * per window but gets no closer, and must still escalate to the snap. The
+ * window keeps running across repaths, and a nudge never resets the stage.
+ */
 export function watchdog(m: BotMotionState, ctx: LocoContext): void {
+  if (m.status === 'waiting-path') return; // a repath keeps the window running
   if (m.status !== 'moving') {
-    copy(m.pos, m.progressRef);
+    m.progressRefRemaining = -1;
+    m.stage = 0;
+    return;
+  }
+  if (m.progressRefRemaining < 0) {
+    m.progressRefRemaining = remaining(m);
     m.progressRefTick = ctx.tick;
+    copy(m.pos, m.progressRef);
     return;
   }
   if (ctx.tick - m.progressRefTick < T.progressWindowTicks) return;
-  const progress = Math.hypot(m.pos.x - m.progressRef.x, m.pos.z - m.progressRef.z);
+  const now = remaining(m);
+  const progress = m.progressRefRemaining - now;
+  m.progressRefRemaining = now;
   copy(m.pos, m.progressRef);
   m.progressRefTick = ctx.tick;
-  if (progress >= T.progressMin) {
+  if (progress >= T.progressMin && !m.nudging) {
     m.stage = 0;
     return;
   }

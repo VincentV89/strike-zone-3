@@ -351,6 +351,37 @@ describe('stuck watchdog (BR-AI-65, FD-AI-Q2)', () => {
     expect(m.pos).toEqual({ x: 0.3, y: 0, z: 0.2 });
   });
 
+  it('escalates for a bot that slides back and forth without getting closer', () => {
+    const diag = createDiagnostics(() => undefined);
+    let flip = 0;
+    const world = wrap(open.world, {
+      moveCapsule: (pos, _vel, _c, _dt, _s, out) => {
+        const r = out ?? {
+          position: vec3(),
+          velocity: vec3(),
+          grounded: true,
+          hitCeiling: false,
+          landed: false,
+        };
+        flip++;
+        r.position.x = Math.floor(flip / 20) % 2 === 0 ? 0.3 : 1.3; // 1 m oscillation
+        r.position.y = pos.y;
+        r.position.z = 0.2;
+        r.velocity.x = 0;
+        r.velocity.y = 0;
+        r.velocity.z = 0;
+        r.grounded = true;
+        return r;
+      },
+    });
+    const ctx = ctxFor(open, { world, diag });
+    const m = createBotMotion(id(1), v(0.3, 0, 0.2), 0);
+    setGoal(m, v(15, 0, 15), null, 'run', diag);
+    for (let i = 0; i < 90 * 8 && m.status !== 'stuck'; i++) run(m, ctx, 1);
+    expect(m.status).toBe('stuck');
+    expect(diag.snapshot()['ai/stuck-snap']).toBe(1);
+  });
+
   it('does not run while waiting for a path or after arriving', () => {
     const ctx = ctxFor(open, { world: frozenWorld(open.world) });
     const m = createBotMotion(id(1), v(0, 0, 0), 0);

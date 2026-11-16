@@ -56,6 +56,8 @@ export interface BotMotionState {
   stage: number;
   repaths: number;
   progressRefTick: number;
+  /** Remaining path length at the window start; -1 = not measuring. */
+  progressRefRemaining: number;
   readonly progressRef: Vec3;
   /** Watchdog nudge in progress: dest is the nearest node, goal is unchanged. */
   nudging: boolean;
