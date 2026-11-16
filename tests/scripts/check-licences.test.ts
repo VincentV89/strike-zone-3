@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   evaluateLicence,
+  dynamicCodeFindings,
   htmlShapeFindings,
   runChecks,
   type Report,
@@ -263,5 +264,17 @@ describe('check:licences phase 4 (dist)', () => {
     ).map((f) => f.rule);
     expect(found).toEqual(['inline-style', 'external-resource', 'inline-handler', 'inline-style']);
     expect(htmlShapeFindings(CLEAN_HTML)).toEqual([]);
+  });
+
+  it('fails eval( and new Function in dist/assets/*.js only (SEC-P-03)', () => {
+    const root = makeRepo({
+      files: {
+        'dist/assets/index.js': 'const a = 1;\nconst f = new Function("return 1");\n',
+        'dist/assets/other.js': 'x = eval ("1");',
+        'dist/notes.txt': 'eval(1) is only checked in bundled JavaScript',
+      },
+    });
+    expect(rules(run(root)).sort()).toEqual(['dist-eval', 'dist-new-function']);
+    expect(dynamicCodeFindings('retrieval(1); obj.evaluate(2); newFunction()')).toEqual([]);
   });
 });

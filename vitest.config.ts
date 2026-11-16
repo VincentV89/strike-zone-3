@@ -7,7 +7,9 @@ export default defineConfig({
     pool: 'forks',
     maxWorkers: 2, // 2-vCPU runtime (BR-F-43)
     execArgv: ['--expose-gc'], // allocation probe in tests/core/kernel-bench.test.ts
-    testTimeout: 30_000,
+    // The first typed ESLint probe in each tests/arch file builds the whole TS program,
+    // which takes 30+ s under v8 coverage on the 2-vCPU runtime (same value as collision-nav).
+    testTimeout: 60_000,
     typecheck: {
       enabled: true,
       include: ['tests/**/*.test-d.ts'],
@@ -16,7 +18,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/contracts/**', 'src/app/main.ts', '**/*.d.ts'],
+      // gl-host.ts is the WebGL boundary, covered by the manual browser check (NFR-P-Q2).
+      exclude: ['src/contracts/**', 'src/app/main.ts', 'src/render/gl-host.ts', '**/*.d.ts'],
       reporter: ['text-summary', 'json-summary'],
       reportsDirectory: 'coverage',
       thresholds: {
@@ -24,6 +27,7 @@ export default defineConfig({
         'src/core/**': { lines: 80 },
         'src/maps/**': { lines: 80 }, // BR-M-92
         'src/ui/hud/**': { lines: 80 },
+        'src/render/**': { lines: 80 }, // NFR-P-Q2
       },
     },
   },
