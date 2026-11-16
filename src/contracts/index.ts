@@ -16,6 +16,7 @@ export type {
 export type { InputCommand } from './input';
 export type { LoadoutView, PlayerView, BotView, RadarContact, SimSnapshot } from './views';
 export type { SimEvent, LocomotionStatus } from './events';
+export type { AvoidZone, BotIntent } from './ai';
 export type { UiIntent, Settings, SettingsIntent } from './ui';
 export type { HistoryEntry } from './history';
 export type { SeamTarget } from './seams';
