@@ -6,8 +6,8 @@
  * cycle check. A unit that adds an edge updates this table and records it in
  * its code-summary (BR-F-35).
  *
- * Deliberate omission: `app-shell -> audio` is absent until the audio unit
- * adds it (D-SEQ-1 in the bolt plan).
+ * `app-shell -> audio` was added by the audio unit (B10, BR-AU-81). Only
+ * src/app/features.ts may use it (tests/arch/import-graph.test.ts).
  */
 
 export type Ring = 'sim' | 'adapter' | 'delivery';
@@ -136,7 +136,8 @@ export const COMPONENTS: readonly ComponentSpec[] = [
       settings: 'R',
       persistence: 'R',
       'test-seams': 'R',
-      // audio: 'R' is added by the audio unit (D-SEQ-1).
+      // Added by the audio unit (BR-AU-81); only src/app/features.ts imports src/audio.
+      audio: 'R',
     },
   },
   {

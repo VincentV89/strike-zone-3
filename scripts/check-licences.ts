@@ -6,7 +6,7 @@
  *   1. dependencies: lockfile, exact pins, registry source + integrity, SPDX licences
  *   2. assets: every binary asset is attested in assets-provenance.json
  *   3. source secret and policy scan (filesystem walk, no git)
- *   4. dist/ scan (secret rules, VITE_, index.html shape)
+ *   4. dist/ scan (secret rules, VITE_, index.html shape, eval / new Function in assets JS)
  *
  * Offline: reads files only. Writes reports/licences.json in a `finally`
  * block on every run and exits 1 when any phase has a failure.
@@ -474,6 +474,26 @@ export function htmlShapeFindings(html: string): { rule: string; line: number }[
   return out;
 }
 
+/**
+ * Dynamic-code checks on bundled JavaScript (security-design-presentation-3d
+ * SEC-P-03): the CSP has no 'unsafe-eval', so eval( or new Function in
+ * dist/assets/*.js would break at runtime and is a failure.
+ */
+const DYNAMIC_CODE_RULES: readonly { rule: string; pattern: RegExp }[] = [
+  { rule: 'dist-eval', pattern: /\beval\s*\(/ },
+  { rule: 'dist-new-function', pattern: /\bnew\s+Function\b/ },
+];
+
+export function dynamicCodeFindings(js: string): { rule: string; line: number }[] {
+  const out: { rule: string; line: number }[] = [];
+  js.split(/\r?\n/).forEach((text, i) => {
+    for (const r of DYNAMIC_CODE_RULES) {
+      if (r.pattern.test(text)) out.push({ rule: r.rule, line: i + 1 });
+    }
+  });
+  return out;
+}
+
 function phaseDist(root: string, requireDist: boolean, report: Report): void {
   const distDir = join(root, 'dist');
   if (!existsSync(distDir) || !statSync(distDir).isDirectory()) {
@@ -500,6 +520,9 @@ function phaseDist(root: string, requireDist: boolean, report: Report): void {
     const hits = [
       ...scanText(text, true),
       ...(rel === 'index.html' ? htmlShapeFindings(text).map((h) => ({ ...h, preview: '' })) : []),
+      ...(/^assets\/[^/]+\.js$/.test(rel)
+        ? dynamicCodeFindings(text).map((h) => ({ ...h, preview: '' }))
+        : []),
     ];
     for (const hit of hits) {
       report.dist.findings.push({ rule: hit.rule, file, line: hit.line });

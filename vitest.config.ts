@@ -7,7 +7,7 @@ export default defineConfig({
     pool: 'forks',
     maxWorkers: 2, // 2-vCPU runtime (BR-F-43)
     execArgv: ['--expose-gc'], // allocation probes in tests/core and tests/bench
-    // The first typed ESLint probe in tests/arch builds the whole TS program; under v8
+    // The first typed ESLint probe per lint test file builds the whole TS program; under v8
     // coverage on 2 vCPU that takes ~32 s once src/physics and src/nav exist.
     testTimeout: 60_000,
     typecheck: {
@@ -18,7 +18,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/contracts/**', 'src/app/main.ts', '**/*.d.ts'],
+      // gl-host.ts is the WebGL boundary, covered by the manual browser check (NFR-P-Q2).
+      exclude: ['src/contracts/**', 'src/app/main.ts', 'src/render/gl-host.ts', '**/*.d.ts'],
       reporter: ['text-summary', 'json-summary'],
       reportsDirectory: 'coverage',
       thresholds: {
@@ -26,6 +27,7 @@ export default defineConfig({
         'src/core/**': { lines: 80 },
         'src/maps/**': { lines: 80 }, // BR-M-92
         'src/ui/hud/**': { lines: 80 },
+        'src/render/**': { lines: 80 }, // NFR-P-Q2
         'src/physics/**': { lines: 80 }, // BR-CN-97
         'src/nav/**': { lines: 80 }, // BR-CN-97
         'src/settings/**': { lines: 80 },
@@ -35,6 +37,7 @@ export default defineConfig({
         'src/sim/player/**': { lines: 80 }, // TS-PC-09
         'src/weapons/**': { lines: 80 }, // TS-PC-09
         'src/combat/**': { lines: 80 }, // TS-PC-09
+        'src/audio/**': { lines: 80 }, // BR-AU-92
       },
     },
   },
