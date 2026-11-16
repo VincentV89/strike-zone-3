@@ -35,6 +35,7 @@ export default defineConfig({
         'src/ui/screens/**': { lines: 80 },
         'src/ui/components/**': { lines: 80 },
         'src/sim/player/**': { lines: 80 }, // TS-PC-09
+        'src/sim/**': { lines: 80 }, // BR-GS-93, TS-GS-08
         'src/weapons/**': { lines: 80 }, // TS-PC-09
         'src/combat/**': { lines: 80 }, // TS-PC-09
         'src/audio/**': { lines: 80 }, // BR-AU-92
