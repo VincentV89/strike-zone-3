@@ -81,7 +81,7 @@ If you add a GitHub `environment:` to the deploy job (for a manual approval), th
 
 ### Rollback from CI
 
-A failed stack update rolls back by itself in CloudFormation. If the smoke checks fail after a successful deploy, revert the bad commit on `main` (`git revert`, pull request, merge); the push re-runs verify, e2e and deploy with the previous code, well inside the 30-minute RTO. The manual rollback above still works when GitHub Actions is unavailable.
+A failed stack update rolls back by itself in CloudFormation. If the smoke checks fail after a successful deploy, revert the bad commit on `main` (`git revert`, pull request, merge); the push re-runs verify, e2e and deploy with the previous code, well inside the 30-minute RTO. The manual rollback above still works when GitHub Actions is unavailable. Incident runbooks (failed deploy, bad release, cost alert, credentials, disaster recovery) are in [docs/RUNBOOKS.md](../docs/RUNBOOKS.md).
 
 ## Destroy
 
