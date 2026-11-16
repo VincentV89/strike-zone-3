@@ -17,7 +17,8 @@ export const SEAM_MARKERS: readonly string[] = [
   'installTestSeams',
 ];
 
-export const ENTRY_MAX_BYTES = 800 * 1024;
+/** Raised from 800 KB by human decision at B9 code-generation (option A, 2026-11-16). */
+export const ENTRY_MAX_BYTES = 900 * 1024;
 export const ENTRY_MAX_BROTLI_BYTES = 200 * 1024;
 
 export interface SeamFinding {

@@ -48,6 +48,8 @@ body {
   padding: 0.25rem 0.5rem;
   background: rgb(14 17 22 / 88%);
   color: #e8ecf1;
-  font: 12px ui-monospace, monospace;
+  font:
+    12px ui-monospace,
+    monospace;
   pointer-events: none;
 }

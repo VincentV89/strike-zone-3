@@ -178,7 +178,7 @@ describe('sim-ring network and global bans in physics and nav (SD-CN-01, SD-CN-0
 describe('app-shell lint block (SD-AS-05..07)', () => {
   const cases: [string, string][] = [
     [
-      "export function f(el: HTMLElement, x: string): void {\n  el.innerHTML = x;\n}\n",
+      'export function f(el: HTMLElement, x: string): void {\n  el.innerHTML = x;\n}\n',
       'no-restricted-properties',
     ],
     ["export const a = fetch('x');\n", 'no-restricted-globals'],
