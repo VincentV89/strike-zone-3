@@ -1,6 +1,6 @@
 # StrikeZone
 
-Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene), the **hosting-infra** unit (one CDK v2 stack that serves the bundle from a private S3 bucket through CloudFront; see [infra/README.md](infra/README.md)) and the **hud** unit (`src/ui/hud`).
+Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene), the **hosting-infra** unit (one CDK v2 stack that serves the bundle from a private S3 bucket through CloudFront; see [infra/README.md](infra/README.md)), the **map-data** unit (`src/maps`) and the **hud** unit (`src/ui/hud`).
 
 ## Requirements
 
@@ -15,7 +15,7 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 | `npm run lint`           | `eslint . --max-warnings 0 && prettier --check .`                                                |
 | `npm run typecheck`      | `tsc --noEmit` (strict, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`)                      |
 | `npm test`               | Vitest (Node environment, at most 2 workers)                                                     |
-| `npm run test:coverage`  | Vitest with v8 coverage; fails below 80 % lines on `src/core/**`                                 |
+| `npm run test:coverage`  | Vitest with v8 coverage; fails below 80 % lines on `src/core/**` or `src/maps/**`                |
 | `npm run check:imports`  | The import-graph and ring-lint tests on their own (`tests/arch`)                                 |
 | `npm run build`          | `vite build` into `dist/`                                                                        |
 | `npm run build:web`      | `vite build`; called by CDK local bundling with `--outDir` during `cdk deploy`                   |
@@ -37,6 +37,7 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 | delivery   | `infra/`, `scripts/`, `test/`                                                                                       | Node-only tooling                                                                             |
 
 - `src/core` is the kernel: seeded RNG streams (`createRng`, sfc32), the 60 Hz fixed-step clock, the bounded event buffer, the frame profiler, the Diagnostics port, Vec3/AABB math and `StrikeZoneError`/`Result`.
+- `src/maps` is map-data: the Desert Compound and Industrial Warehouse maps as deep-frozen TypeScript data, plus `checkMapData` (pure data rules) and the map-content checklist. Other code imports `src/maps/index.ts` only; map files, builders and helpers are private. Maps load nothing at runtime, and the `src/maps/**` ESLint block bans `fetch`, `JSON.parse`, `globalThis` and dynamic `import()` on top of the sim-ring rules.
 - `src/contracts` holds only types (and the `BOT_COUNTS` table) shared between components. Changes are additive only.
 - `src/ui/hud` is the in-game HUD: `toHudViewModel` (pure) projects a `SimSnapshot` into a view model, and `createHud` builds a DOM/SVG overlay once and writes only changed values through a node cache. Per stepped frame the caller runs `hud.feed(events)` then `hud.update(vm)`, and calls `hud.reset()` on every round start. The HUD reads radar positions only from `snap.radar`. Design tokens live in `src/ui/tokens.css`.
 - DOM tests opt in to happy-dom with a first-line `// @vitest-environment happy-dom` docblock and live under `tests/ui/**/dom/`. Every other test runs in Node. `src/` may not import happy-dom or jsdom.

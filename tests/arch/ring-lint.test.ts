@@ -77,3 +77,42 @@ describe('ESLint browser hygiene rules (all of src/)', () => {
     ).toEqual([]);
   });
 });
+
+describe('ESLint map-data block (SD-M-01, SD-M-02)', () => {
+  const probe = 'src/maps/__probe__.ts';
+  const cases: [string, string][] = [
+    ["export const a = fetch('x');\n", 'no-restricted-globals'],
+    ["export const a = globalThis.fetch('x');\n", 'no-restricted-globals'],
+    ["export const a = JSON.parse('{}') as unknown;\n", 'no-restricted-properties'],
+    ['export const a = structuredClone({});\n', 'no-restricted-globals'],
+    ["export const a = import('./x');\n", 'no-restricted-syntax'],
+    // Inherited bans that a careless override would drop.
+    ['export const a = Date.now();\n', 'no-restricted-globals'],
+    ['export const a = Math.random();\n', 'no-restricted-properties'],
+    ['export const a = setTimeout(() => 0);\n', 'no-restricted-globals'],
+    [
+      "export function f(el: { innerHTML: string }): void {\n  el.innerHTML = '';\n}\n",
+      'no-restricted-properties',
+    ],
+    ['export const a = import.meta.env.VITE_X as unknown;\n', 'no-restricted-syntax'],
+  ];
+
+  it.each(cases)('rejects %j with exactly one %s error', async (code, rule) => {
+    const ids = await ruleIds(code, probe);
+    expect(ids.filter((id) => id === rule)).toHaveLength(1);
+  });
+
+  it('keeps the sim-ring import bans for src/maps', async () => {
+    const ids = await ruleIds(
+      "import { Scene } from 'three';\nexport const s = new Scene();\n",
+      probe,
+    );
+    expect(ids).toContain('no-restricted-imports');
+  });
+
+  it('passes plain map data', async () => {
+    expect(await ruleIds("export const M = { id: 'x', solids: [] as const };\n", probe)).toEqual(
+      [],
+    );
+  });
+});
