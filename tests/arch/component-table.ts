@@ -6,8 +6,8 @@
  * cycle check. A unit that adds an edge updates this table and records it in
  * its code-summary (BR-F-35).
  *
- * Deliberate omission: `app-shell -> audio` is absent until the audio unit
- * adds it (D-SEQ-1 in the bolt plan).
+ * `app-shell -> audio` was added by the audio unit (B10, BR-AU-81). Only
+ * src/app/features.ts may use it (tests/arch/import-graph.test.ts).
  */
 
 export type Ring = 'sim' | 'adapter' | 'delivery';
@@ -49,7 +49,8 @@ export const COMPONENTS: readonly ComponentSpec[] = [
     id: 'navigation',
     ring: 'sim',
     prefixes: ['src/nav'],
-    deps: { [core]: 'R', 'map-data': 'T', 'collision-world': 'R' },
+    // map-data is R: src/nav reads WALKABLE_KINDS and MAP_RULES at runtime (FD-CN-01).
+    deps: { [core]: 'R', 'map-data': 'R', 'collision-world': 'R' },
   },
   {
     id: 'player-controller',
@@ -135,7 +136,8 @@ export const COMPONENTS: readonly ComponentSpec[] = [
       settings: 'R',
       persistence: 'R',
       'test-seams': 'R',
-      // audio: 'R' is added by the audio unit (D-SEQ-1).
+      // Added by the audio unit (BR-AU-81); only src/app/features.ts imports src/audio.
+      audio: 'R',
     },
   },
   {
@@ -154,8 +156,10 @@ export const COMPONENTS: readonly ComponentSpec[] = [
   {
     id: 'menus-ui',
     ring: 'adapter',
-    prefixes: ['src/ui/screens'],
-    deps: { [contracts]: 'T', settings: 'T' },
+    // FD-MS-07 / TS-MS-03: components and the shared token sheet belong to menus-ui.
+    prefixes: ['src/ui/screens', 'src/ui/components', 'src/ui/tokens.css'],
+    // R edges: SETTINGS_SPEC (FD-MS-07) and BOT_COUNTS (SD-MS-05) are runtime values.
+    deps: { [contracts]: 'R', settings: 'R' },
   },
   {
     id: 'audio',
@@ -169,7 +173,8 @@ export const COMPONENTS: readonly ComponentSpec[] = [
     prefixes: ['src/settings'],
     deps: { [contracts]: 'T', persistence: 'T' },
   },
-  { id: 'persistence', ring: 'adapter', prefixes: ['src/persistence'], deps: { [contracts]: 'T' } },
+  // persistence -> contracts is R: history validation reads BOT_COUNTS (SD-MS-05).
+  { id: 'persistence', ring: 'adapter', prefixes: ['src/persistence'], deps: { [contracts]: 'R' } },
   {
     id: 'test-seams',
     ring: 'adapter',

@@ -133,31 +133,170 @@ const HUD_RESTRICTED_PROPERTIES = [
 ];
 
 const SIM_BANNED_GLOBALS = [
-  'window',
-  'document',
-  'localStorage',
-  'sessionStorage',
-  'navigator',
-  'performance',
-  'requestAnimationFrame',
-  'setTimeout',
-  'setInterval',
-  'Date',
-].map((name) => ({ name, message: `Simulation-ring code must not read ${name} (BR-F-01).` }));
+  ...[
+    'window',
+    'document',
+    'localStorage',
+    'sessionStorage',
+    'navigator',
+    'performance',
+    'requestAnimationFrame',
+    'setTimeout',
+    'setInterval',
+    'Date',
+  ].map((name) => ({ name, message: `Simulation-ring code must not read ${name} (BR-F-01).` })),
+  // Network and global-object bans promoted from the maps block to the whole
+  // sim ring (OQ-M-NFR-1 = A, SD-CN-01).
+  ...[
+    'fetch',
+    'XMLHttpRequest',
+    'WebSocket',
+    'EventSource',
+    'indexedDB',
+    'caches',
+    'globalThis',
+    'self',
+    'importScripts',
+  ].map((name) => ({
+    name,
+    message: `Simulation-ring code must not read ${name} (BR-F-01, SEC-CN-01).`,
+  })),
+];
 
-/** Extra bans for map data: maps are compiled-in data, never loaded at runtime (SEC-M-01). */
-const MAPS_BANNED_GLOBALS = [
+// Attribute selectors reused by the dom.ts block below (SD-H-02, SEC-MS-02).
+const SET_ATTRIBUTE_STYLE_OR_ON = {
+  selector: "CallExpression[callee.property.name='setAttribute'][arguments.0.value=/^(style|on)/i]",
+  message: 'Inline style and on* attributes break the CSP (SD-H-02).',
+};
+const SET_ATTRIBUTE_NS_STYLE_OR_ON = {
+  selector:
+    "CallExpression[callee.property.name='setAttributeNS'][arguments.1.value=/^(style|on)/i]",
+  message: 'Inline style and on* attributes break the CSP (SD-H-02).',
+};
+
+// menus-settings unit paths (security-design-menus-settings SD-MS-03, SD-MS-06).
+const MENUS_FILES = [
+  'src/ui/screens/**/*.ts',
+  'src/ui/components/**/*.ts',
+  'src/settings/**/*.ts',
+  'src/persistence/**/*.ts',
+];
+const MENUS_TIMER_GLOBALS = ['setTimeout', 'setInterval', 'requestAnimationFrame'];
+const MENUS_BANNED_GLOBALS = [
   'fetch',
   'XMLHttpRequest',
   'WebSocket',
   'EventSource',
+  'localStorage',
+  'sessionStorage',
+  'indexedDB',
+].map((name) => ({
+  name,
+  message: `menus-settings code must not use ${name} (SEC-MS-05, SEC-MS-08).`,
+}));
+const MENUS_TIMER_BANS = MENUS_TIMER_GLOBALS.map((name) => ({
+  name,
+  message: `Use scope.timeout from src/ui/components/scope.ts, not ${name} (PD-MS-03).`,
+}));
+const MENUS_RESTRICTED_PROPERTIES = [
+  { object: 'navigator', property: 'sendBeacon', message: 'No network APIs (SEC-MS-08).' },
+  {
+    object: 'window',
+    property: 'localStorage',
+    message: 'Only app-shell reads localStorage (SD-MS-03).',
+  },
+  { object: 'window', property: 'sessionStorage', message: 'No sessionStorage (SD-MS-03).' },
+  { object: 'window', property: 'setTimeout', message: 'Use scope.timeout (PD-MS-03).' },
+  { object: 'window', property: 'setInterval', message: 'Use scope.timeout (PD-MS-03).' },
+];
+const JSON_PARSE_BAN = {
+  object: 'JSON',
+  property: 'parse',
+  message: 'JSON.parse is allowed only in src/persistence (security-design-menus-settings).',
+};
+const IMPORT_EXPRESSION_BAN = {
+  selector: 'ImportExpression',
+  message: 'Dynamic import() is banned in menus-settings code (SEC-MS-08).',
+};
+const ADD_EVENT_LISTENER_BAN = {
+  selector: "CallExpression[callee.property.name='addEventListener']",
+  message: 'Register listeners through scope.on from src/ui/components/scope.ts (PD-MS-03).',
+};
+
+/** Extra bans for map data: maps are compiled-in data, never loaded at runtime (SEC-M-01). */
+const MAPS_BANNED_GLOBALS = ['structuredClone'].map((name) => ({
+  name,
+  message: `Map data must not use ${name} (SEC-M-01).`,
+}));
+
+/**
+ * audio (security-design-audio SD-AU-04). Only src/audio/context.ts reads a
+ * browser global; everything else in src/audio gets the AudioContextLike it
+ * is given.
+ */
+const AUDIO_BANNED_NAMES = [
+  'window',
+  'document',
+  'self',
+  'globalThis',
+  'navigator',
+  'localStorage',
+  'sessionStorage',
   'indexedDB',
   'caches',
-  'structuredClone',
-  'globalThis',
-  'self',
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'EventSource',
+  'Worker',
   'importScripts',
-].map((name) => ({ name, message: `Map data must not use ${name} (SEC-M-01).` }));
+  'URL',
+  'Audio',
+  'HTMLAudioElement',
+  'MediaElementAudioSourceNode',
+  'MediaStreamAudioSourceNode',
+  'AudioWorkletNode',
+  'OfflineAudioContext',
+  'AnalyserNode',
+  'ScriptProcessorNode',
+  'webkitAudioContext',
+  'performance',
+  'Date',
+  'setTimeout',
+  'setInterval',
+  'requestAnimationFrame',
+  'queueMicrotask',
+];
+const audioGlobal = (name) => ({
+  name,
+  message: `Audio code must not use ${name}; only src/audio/context.ts touches globals (SD-AU-04).`,
+});
+const AUDIO_BANNED_GLOBALS = AUDIO_BANNED_NAMES.map(audioGlobal);
+const AUDIO_CONTEXT_BANNED_GLOBALS = AUDIO_BANNED_NAMES.filter((n) => n !== 'globalThis').map(
+  audioGlobal,
+);
+const AUDIO_RESTRICTED_PROPERTIES = [
+  ...SRC_RESTRICTED_PROPERTIES,
+  { object: 'Math', property: 'random', message: 'Use the seeded audio Rng (BR-AU-62).' },
+  ...[
+    'decodeAudioData',
+    'audioWorklet',
+    'createAnalyser',
+    'createScriptProcessor',
+    'createMediaElementSource',
+    'createMediaStreamSource',
+    'createMediaStreamDestination',
+    'copyFromChannel',
+    'createObjectURL',
+  ].map((property) => ({
+    property,
+    message: `Audio synthesises from oscillators and one noise buffer; ${property} is banned (SEC-AU-08).`,
+  })),
+];
+const AUDIO_IMPORT_EXPRESSION_BAN = {
+  selector: 'ImportExpression',
+  message: 'No dynamic import() in src/audio (SD-AU-04).',
+};
 
 /** Renderer bans (security-design-presentation-3d SEC-P-01/02/07/11). */
 const RENDER_BANNED_GLOBALS = [
@@ -239,10 +378,16 @@ export default tseslint.config(
             'src/core/__probe__.ts',
             'src/app/__probe__.ts',
             'src/maps/__probe__.ts',
+            'src/physics/__probe__.ts',
+            'src/nav/__probe__.ts',
             'src/ui/__probe__.ts',
             'src/ui/hud/__probe__.ts',
             'src/render/__probe__.ts',
             'src/render/gl-host.__probe__.ts',
+            'src/ui/screens/__probe__.ts',
+            'src/ui/components/__probe__.ts',
+            'src/persistence/__probe__.ts',
+            'src/audio/__probe__.ts',
           ],
         },
         tsconfigRootDir: import.meta.dirname,
@@ -324,6 +469,7 @@ export default tseslint.config(
   {
     // Flat config replaces rule options instead of merging them, so every
     // narrower block spreads the src/** lists it would otherwise drop.
+    // All UI code: attribute bans on top of the foundation env restriction.
     files: ['src/ui/**/*.ts'],
     rules: { 'no-restricted-syntax': ['error', ...UI_SYNTAX] },
   },
@@ -353,6 +499,88 @@ export default tseslint.config(
     // Block B: gl-host.ts may listen on the canvas and construct WebGLRenderer.
     files: ['src/render/gl-host*.ts'],
     rules: { 'no-restricted-syntax': ['error', ...RENDER_SYNTAX_BASE] },
+  },
+  {
+    // menus-settings: network, storage, timer and listener bans. Spreads the
+    // shared lists because flat config replaces rule options (override trap).
+    files: MENUS_FILES,
+    rules: {
+      'no-restricted-globals': ['error', ...MENUS_BANNED_GLOBALS, ...MENUS_TIMER_BANS],
+      'no-restricted-properties': [
+        'error',
+        ...SRC_RESTRICTED_PROPERTIES,
+        ...MENUS_RESTRICTED_PROPERTIES,
+        JSON_PARSE_BAN,
+      ],
+      'no-restricted-syntax': [
+        'error',
+        ...UI_SYNTAX,
+        IMPORT_EXPRESSION_BAN,
+        ADD_EVENT_LISTENER_BAN,
+      ],
+    },
+  },
+  {
+    // Persistence is the only place stored JSON is parsed (SD-MS-02).
+    files: ['src/persistence/**/*.ts'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        ...SRC_RESTRICTED_PROPERTIES,
+        ...MENUS_RESTRICTED_PROPERTIES,
+      ],
+    },
+  },
+  {
+    // scope.ts owns every listener and timer for the unit (PD-MS-03).
+    files: ['src/ui/components/scope.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...MENUS_BANNED_GLOBALS],
+      'no-restricted-syntax': ['error', ...UI_SYNTAX, IMPORT_EXPRESSION_BAN],
+    },
+  },
+  {
+    // dom.ts is the single attribute writer; its name parameter is the typed
+    // AllowedAttr union (SD-MS-07), so only the computed-name selector is lifted.
+    files: ['src/ui/components/dom.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ENV_RESTRICTION,
+        SET_ATTRIBUTE_STYLE_OR_ON,
+        SET_ATTRIBUTE_NS_STYLE_OR_ON,
+        IMPORT_EXPRESSION_BAN,
+        ADD_EVENT_LISTENER_BAN,
+      ],
+    },
+  },
+  {
+    // audio Block A (SD-AU-04). Spreads SRC_RESTRICTED_PROPERTIES and
+    // ENV_RESTRICTION because flat config replaces rule options. Does not set
+    // no-restricted-imports, so the src/** TEST_DOM_IMPORTS ban still applies.
+    files: ['src/audio/**/*.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...AUDIO_BANNED_GLOBALS],
+      'no-restricted-properties': ['error', ...AUDIO_RESTRICTED_PROPERTIES],
+      'no-restricted-syntax': ['error', ENV_RESTRICTION, AUDIO_IMPORT_EXPRESSION_BAN],
+      'no-console': 'error',
+    },
+  },
+  {
+    // audio Block B: context.ts may read globalThis.AudioContext and nothing else.
+    files: ['src/audio/context.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...AUDIO_CONTEXT_BANNED_GLOBALS],
+      'no-restricted-syntax': [
+        'error',
+        ENV_RESTRICTION,
+        AUDIO_IMPORT_EXPRESSION_BAN,
+        {
+          selector: "MemberExpression[object.name='globalThis'][property.name!='AudioContext']",
+          message: 'context.ts may read only globalThis.AudioContext (SD-AU-04).',
+        },
+      ],
+    },
   },
   prettier,
 );

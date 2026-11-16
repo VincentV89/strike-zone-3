@@ -6,9 +6,9 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     pool: 'forks',
     maxWorkers: 2, // 2-vCPU runtime (BR-F-43)
-    execArgv: ['--expose-gc'], // allocation probe in tests/core/kernel-bench.test.ts
-    // The first typed ESLint probe in each tests/arch file builds the whole TS program,
-    // which takes 30+ s under v8 coverage on the 2-vCPU runtime (same value as collision-nav).
+    execArgv: ['--expose-gc'], // allocation probes in tests/core and tests/bench
+    // The first typed ESLint probe per lint test file builds the whole TS program; under v8
+    // coverage on 2 vCPU that takes ~32 s once src/physics and src/nav exist.
     testTimeout: 60_000,
     typecheck: {
       enabled: true,
@@ -28,6 +28,13 @@ export default defineConfig({
         'src/maps/**': { lines: 80 }, // BR-M-92
         'src/ui/hud/**': { lines: 80 },
         'src/render/**': { lines: 80 }, // NFR-P-Q2
+        'src/physics/**': { lines: 80 }, // BR-CN-97
+        'src/nav/**': { lines: 80 }, // BR-CN-97
+        'src/settings/**': { lines: 80 },
+        'src/persistence/**': { lines: 80 },
+        'src/ui/screens/**': { lines: 80 },
+        'src/ui/components/**': { lines: 80 },
+        'src/audio/**': { lines: 80 }, // BR-AU-92
       },
     },
   },

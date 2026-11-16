@@ -31,9 +31,17 @@ describe('import graph of src/ (check:imports)', () => {
     expect(checkTable(COMPONENTS)).toEqual([]);
   });
 
-  it('keeps app-shell -> audio out until the audio unit adds it', () => {
+  it('declares app-shell -> audio as a runtime edge (BR-AU-81)', () => {
     const appShell = COMPONENTS.find((c) => c.id === 'app-shell');
-    expect(appShell?.deps['audio']).toBeUndefined();
+    expect(appShell?.deps['audio']).toBe('R');
+  });
+
+  it('lets only src/app/features.ts import src/audio (BR-AU-80)', () => {
+    const importers = listSourceFiles('src')
+      .filter((file) => !file.path.startsWith('src/audio/'))
+      .filter((file) => /from\s+['"][./]*(?:\.\.\/)*audio(?:\/[^'"]*)?['"]/.test(file.text))
+      .map((file) => file.path);
+    for (const path of importers) expect(path).toBe('src/app/features.ts');
   });
 
   it('gives only app-shell edges into both rings, not counting the shared kernel (BR-F-36)', () => {

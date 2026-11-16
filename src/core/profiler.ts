@@ -10,7 +10,8 @@ export type ProfileSection =
   | 'nav'
   | 'combat'
   | 'render-submit'
-  | 'hud';
+  | 'hud'
+  | 'audio';
 
 export const PROFILE_SECTIONS = [
   'sim',
@@ -23,6 +24,7 @@ export const PROFILE_SECTIONS = [
   'combat',
   'render-submit',
   'hud',
+  'audio',
 ] as const satisfies readonly ProfileSection[];
 
 export interface SectionStats {
