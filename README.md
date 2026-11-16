@@ -27,6 +27,7 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 | `npm run build:test`     | `vite build --mode test --outDir dist-test`: the e2e bundle with test seams (never deployed, not in the gate)                                                                                                                           |
 | `npm run e2e`            | `build:test`, then Playwright headless Chromium plays a seeded round and Play Again on both maps against `dist-test/` and writes `reports/e2e.json` (not in the gate; see below)                                                        |
 | `npm run smoke`          | Post-deploy smoke checks SM-1..SM-9 against `reports/cdk-outputs.json`, or blocked mode with the missing items; `-- --precheck` writes the credential precheck to `reports/precheck.json`                                               |
+| `npm run smoke:browser`  | Post-deploy browser smoke: opens the `DistributionUrl` from `reports/cdk-outputs.json` (no seams), clicks Start Game and the Ready gate and waits for the live HUD; writes `reports/browser-smoke.json`. Runs in the CI deploy job      |
 | `npm run report`         | Classifies the evidence on disk and writes `reports/evidence.json` and `docs/FINAL-REPORT.md`; exits 1 while any check is `automated-fail`                                                                                              |
 | `npm run test:matrix`    | The 1/5/10/20-bot matrix on both maps on its own                                                                                                                                                                                        |
 | `npm run bench:ai`       | The bot-ai bench on its own (`reports/bot-ai-bench.json`)                                                                                                                                                                               |
@@ -93,6 +94,8 @@ The check register in `scripts/verification/checks.ts` lists every spec §13 che
 ## Verify gate
 
 `npm run verify` runs offline after `npm ci`, needs no credentials and makes no AWS calls. Steps are only ever **appended**: hosting-infra inserted `synth` (prebuilt `cdk synth --strict`) after `build`, and app-shell appends `check:seams`. Deploy (`npx cdk deploy --all`) is a separate, manual, credentialed step described in [infra/README.md](infra/README.md). `tests/scripts/verify-script.test.ts` fails if the chain uses anything but `&&` or reorders the foundation steps.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the same `npm ci && npm run verify` without credentials on every pull request and push to `main`, runs `npm run e2e` alongside it, and on a push to `main` deploys the verified bundle through a GitHub OIDC role and runs both smoke checks. Setup (account, region, deploy role, CDK bootstrap) is in [infra/README.md](infra/README.md#github-actions-cicd).
 
 ## Code layout and rings
 

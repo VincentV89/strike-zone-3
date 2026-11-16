@@ -26,6 +26,7 @@
     "bench:ai": "vitest run tests/bench/bot-ai.bench.test.ts",
     "e2e": "npm run build:test && playwright test",
     "smoke": "node scripts/smoke.ts",
+    "smoke:browser": "playwright test -c playwright.deployed.config.ts",
     "report": "node scripts/report.ts",
     "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run synth && npm run check:licences && npm run check:seams"
   },

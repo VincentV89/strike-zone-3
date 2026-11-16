@@ -39,7 +39,7 @@ Deploy is never part of `npm run verify`. It needs AWS credentials (D-01) and a 
 2. `npx cdk bootstrap`, once per account and region, only after approval. It is never scripted.
 3. `npm ci && npm run verify` on the commit you will deploy.
 4. `npx cdk diff` and review IAM and resource changes.
-5. `npx cdk deploy --all`. Build mode runs `npm run build:web` into a CDK staging directory, so one command builds and publishes. Answer the IAM approval prompt yourself; `--require-approval never` is only for an agent run that the requester approved.
+5. `npx cdk deploy --all`. Build mode runs `npm run build:web` into a CDK staging directory, so one command builds and publishes. Answer the IAM approval prompt yourself; `--require-approval never` is used only by an agent run the requester approved and by the GitHub Actions deploy job, whose IAM changes were reviewed in the pull request that the `verify` gate checked.
 6. Run the smoke checks (SM-1..8, owned by verification) against the `DistributionUrl` output.
 
 Stack outputs: `DistributionUrl`, `DistributionId`, `BucketName`.
@@ -47,6 +47,41 @@ Stack outputs: `DistributionUrl`, `DistributionId`, `BucketName`.
 **Publish order.** `WebAssets` uploads every file except `index.html` with `Cache-Control: public, max-age=31536000, immutable`. `WebIndex` then uploads `index.html` with `no-cache` and invalidates `/*`. Neither prunes, so a browser holding the previous `index.html` still finds its assets.
 
 **Rollback.** Check out the last good commit and repeat steps 3 to 6 (RTO under 30 minutes). There is no server-side state.
+
+## GitHub Actions CI/CD
+
+`.github/workflows/ci.yml` runs on pull requests to `main`, pushes to `main` and manual dispatch. `tests/scripts/ci-workflow.test.ts` (inside `npm run verify`) pins its shape.
+
+| Job      | When                                      | Credentials              | What it does                                                                                                                                                                                                                                                                           |
+| -------- | ----------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify` | every run                                 | none (`contents: read`)  | `npm ci && npm run verify`, advisory `npm run audit`; uploads `reports/` and `coverage/` (14 days) and the verified `dist/` (7 days)                                                                                                                                                   |
+| `e2e`    | every run, in parallel with verify        | none (`contents: read`)  | installs headless Chromium, `npm run e2e` (seeded rounds and Play Again on both maps against `dist-test/`)                                                                                                                                                                             |
+| `deploy` | push to `main` only, after verify and e2e | GitHub OIDC, 1 h session | `cdk deploy StrikeZone` in prebuilt mode with the exact `dist/` verify built and checked, writes the `DistributionUrl` to the run summary, then `npm run smoke` (SM-1..SM-9) and `npm run smoke:browser` (opens the URL, clicks Start Game and the Ready gate, waits for the live HUD) |
+
+Deploys never overlap (`deploy-strikezone` concurrency group, never cancelled mid-run). Every action is pinned to a commit SHA.
+
+### One-time setup (account owner, with an administrator profile)
+
+1. **Pick the account and region.** Any commercial region works; CloudFront is global. The stack, the bootstrap and the deploy role must all be in the same region.
+2. **Bootstrap CDK once:** `npx cdk bootstrap aws://<ACCOUNT_ID>/<REGION>`. This creates the `CDKToolkit` stack and the `cdk-hnb659fds-*` roles the workflow assumes. Without it, the deploy job fails at `cdk deploy` with a bootstrap error. The default bootstrap gives the CloudFormation execution role `AdministratorAccess`; to narrow it, re-bootstrap with `--cloudformation-execution-policies <policy-arn>` covering S3, CloudFront, IAM roles for the two deploy-time Lambdas, Lambda and CloudWatch Logs.
+3. **Create the deploy role** from `infra/github-deploy-role.yaml`:
+
+   ```
+   aws cloudformation deploy --stack-name StrikeZoneGitHubDeployRole \
+     --template-file infra/github-deploy-role.yaml --capabilities CAPABILITY_NAMED_IAM \
+     --parameter-overrides CreateOidcProvider=true
+   ```
+
+   Use `CreateOidcProvider=false` if the account already has the `token.actions.githubusercontent.com` provider. The role trusts only tokens whose `sub` is `repo:VincentV89/strike-zone-3:ref:refs/heads/main` with audience `sts.amazonaws.com`. Pull requests, other branches, forks and tags cannot assume it. It may only assume the CDK bootstrap deploy, file-publishing and lookup roles and call `cloudformation:DescribeStacks` on `StrikeZone` and `CDKToolkit` (smoke precheck). Sessions last at most 1 hour and no long-lived key exists anywhere.
+
+4. **Set three repository variables** (Settings → Secrets and variables → Actions → Variables; none of them is a secret): `AWS_DEPLOY_ROLE_ARN` (the `DeployRoleArn` output), `AWS_REGION`, `AWS_ACCOUNT_ID` (the credentials action refuses any other account). The deploy job fails with a named error while any of them is missing.
+5. **Protect `main`:** require pull requests and the `verify` and `e2e` status checks before merging. This is a repository setting; the workflow cannot set it.
+
+If you add a GitHub `environment:` to the deploy job (for a manual approval), the OIDC `sub` becomes `repo:VincentV89/strike-zone-3:environment:<name>`; change the role's trust condition to match, or the job cannot assume it.
+
+### Rollback from CI
+
+A failed stack update rolls back by itself in CloudFormation. If the smoke checks fail after a successful deploy, revert the bad commit on `main` (`git revert`, pull request, merge); the push re-runs verify, e2e and deploy with the previous code, well inside the 30-minute RTO. The manual rollback above still works when GitHub Actions is unavailable.
 
 ## Destroy
 

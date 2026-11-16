@@ -1,0 +1,101 @@
+# One-time setup for the GitHub Actions deploy job (ci-pipeline, CI-DEP-02).
+# Deploy this template once per AWS account, by hand, with an administrator
+# profile, in the same region as the CDK bootstrap. It is NOT part of the
+# StrikeZone CDK app and `cdk deploy --all` never touches it.
+#
+#   aws cloudformation deploy \
+#     --stack-name StrikeZoneGitHubDeployRole \
+#     --template-file infra/github-deploy-role.yaml \
+#     --capabilities CAPABILITY_NAMED_IAM \
+#     --parameter-overrides CreateOidcProvider=true
+#
+# The role trusts only GitHub OIDC tokens for pushes to the main branch of
+# this repository. It can do two things: assume the CDK bootstrap roles
+# (deploy, file publishing, lookup) and read the StrikeZone and CDKToolkit
+# stack descriptions for the smoke precheck. It holds no other permission.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: GitHub OIDC deploy role for the StrikeZone CI/CD workflow (main branch only)
+
+Parameters:
+  GitHubRepository:
+    Type: String
+    Default: VincentV89/strike-zone-3
+    AllowedPattern: '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
+    Description: owner/name of the repository whose workflow may assume the role
+  Branch:
+    Type: String
+    Default: main
+    AllowedPattern: '^[A-Za-z0-9_./-]+$'
+    Description: the only branch whose workflow runs may assume the role
+  CreateOidcProvider:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: false if the account already has the token.actions.githubusercontent.com provider
+  CdkQualifier:
+    Type: String
+    Default: hnb659fds
+    AllowedPattern: '^[a-z0-9]{1,10}$'
+    Description: CDK bootstrap qualifier (the default unless bootstrap used --qualifier)
+  RoleName:
+    Type: String
+    Default: strikezone-github-deploy
+    Description: name of the role; put its ARN in the AWS_DEPLOY_ROLE_ARN repository variable
+
+Conditions:
+  MakeProvider: !Equals [!Ref CreateOidcProvider, 'true']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: MakeProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref RoleName
+      Description: Assumed by the StrikeZone GitHub Actions deploy job on pushes to main
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubRepository}:ref:refs/heads/${Branch}
+      Policies:
+        - PolicyName: cdk-bootstrap-roles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AssumeCdkBootstrapRoles
+                Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                  - sts:TagSession
+                Resource:
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-deploy-role-${AWS::AccountId}-${AWS::Region}
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-file-publishing-role-${AWS::AccountId}-${AWS::Region}
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-lookup-role-${AWS::AccountId}-${AWS::Region}
+              - Sid: SmokePrecheckReadStacks
+                Effect: Allow
+                Action: cloudformation:DescribeStacks
+                Resource:
+                  - !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/StrikeZone/*
+                  - !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/CDKToolkit/*
+
+Outputs:
+  DeployRoleArn:
+    Description: Value for the AWS_DEPLOY_ROLE_ARN repository variable
+    Value: !GetAtt DeployRole.Arn

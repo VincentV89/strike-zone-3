@@ -1,0 +1,198 @@
+# StrikeZone CI/CD (ci-pipeline stage). Trunk-based: pull requests to main and
+# pushes to main run the gate; only a push to main deploys.
+#
+#   verify  npm ci && npm run verify, no cloud credentials (QG-01..QG-05)
+#   e2e     seeded browser rounds against the dist-test bundle (QG-06)
+#   deploy  push to main only, after verify and e2e: GitHub OIDC -> deploy role,
+#           cdk deploy of the StrikeZone stack with the exact dist/ that verify
+#           built and checked, then header smoke and a browser smoke on the
+#           DistributionUrl (QG-07, QG-08)
+#
+# One-time setup (AWS account, region, deploy role, CDK bootstrap) is in
+# infra/README.md, section "GitHub Actions CI/CD".
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: 24.19.0
+  CDK_DISABLE_CLI_TELEMETRY: 'true'
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: npm ci
+        run: npm ci
+      - name: npm run verify
+        run: npm run verify
+      - name: npm run audit (advisory)
+        if: always()
+        run: npm run audit
+      - name: Upload verification reports and coverage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verify-reports-${{ github.sha }}
+          path: |
+            reports/
+            coverage/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Upload the verified web bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: npm ci
+        run: npm ci
+      - name: Install headless Chromium
+        run: |
+          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/ms-playwright" >> "$GITHUB_ENV"
+          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/ms-playwright" npx playwright install --with-deps chromium-headless-shell
+      - name: npm run e2e
+        run: npm run e2e
+      - name: Upload e2e results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-reports-${{ github.sha }}
+          path: |
+            reports/e2e.json
+            reports/playwright/
+          retention-days: 14
+          if-no-files-found: warn
+
+  deploy:
+    name: deploy
+    needs: [verify, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: deploy-strikezone
+      cancel-in-progress: false
+    steps:
+      - name: Check deploy configuration
+        env:
+          ROLE: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          REGION: ${{ vars.AWS_REGION }}
+          ACCOUNT: ${{ vars.AWS_ACCOUNT_ID }}
+        run: |
+          missing=""
+          [ -n "$ROLE" ] || missing="$missing AWS_DEPLOY_ROLE_ARN"
+          [ -n "$REGION" ] || missing="$missing AWS_REGION"
+          [ -n "$ACCOUNT" ] || missing="$missing AWS_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Repository variables not set:$missing. See infra/README.md, GitHub Actions CI/CD."
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: npm ci
+        run: npm ci
+      - name: Download the verified web bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist-${{ github.sha }}
+          path: dist/
+      - name: Assume the deploy role (GitHub OIDC, 1 h session)
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-session-name: strikezone-${{ github.run_id }}-${{ github.run_attempt }}
+          role-duration-seconds: 3600
+          mask-aws-account-id: true
+      - name: cdk deploy StrikeZone (prebuilt dist/)
+        env:
+          SZ_SKIP_WEB_BUILD: '1'
+          SZ_WEB_DIR: dist
+        run: npx cdk deploy StrikeZone --require-approval never --no-notices --outputs-file reports/cdk-outputs.json
+      - name: Publish DistributionUrl
+        run: |
+          url=$(node -e "console.log(JSON.parse(require('fs').readFileSync('reports/cdk-outputs.json','utf8')).StrikeZone.DistributionUrl)")
+          echo "### StrikeZone deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Play: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Header smoke (SM-1..SM-9)
+        run: |
+          npm run smoke -- --precheck
+          npm run smoke
+      - name: Install headless Chromium
+        run: |
+          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/ms-playwright" >> "$GITHUB_ENV"
+          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/ms-playwright" npx playwright install --with-deps chromium-headless-shell
+      - name: Browser smoke (Start Game starts a match)
+        run: npm run smoke:browser
+      - name: Smoke summary
+        if: always()
+        run: |
+          for f in reports/smoke.json reports/browser-smoke.json; do
+            if [ -f "$f" ]; then
+              pass=$(node -e "const r=JSON.parse(require('fs').readFileSync('$f','utf8'));console.log(r.pass ?? (r.mode==='live' && r.checks.every(c=>c.pass||c.notVerified===true)))")
+              echo "- $f: pass=$pass" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+      - name: Upload deploy and smoke results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: deploy-reports-${{ github.sha }}
+          path: |
+            reports/cdk-outputs.json
+            reports/smoke.json
+            reports/browser-smoke.json
+            reports/playwright/
+          retention-days: 14
+          if-no-files-found: warn
