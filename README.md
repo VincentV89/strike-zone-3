@@ -1,9 +1,10 @@
 # StrikeZone
 
-Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene), the **hosting-infra** unit (one CDK v2 stack that serves the bundle from a private S3 bucket through CloudFront; see [infra/README.md](infra/README.md)), the **map-data** unit (`src/maps`), the **collision-nav** unit (`src/physics`, `src/nav`), the **player-combat** unit (`src/sim/player`, `src/weapons`, `src/combat`), the **hud** unit (`src/ui/hud`), the **presentation-3d** unit (`src/render`) and the **audio** unit (`src/audio`), the **bot-ai** unit (`src/ai`), the **game-simulation** unit (`src/sim`, `src/sim/stats`) and the **app-shell** unit (`src/app`, `src/input`, `src/dev`), which composes everything into the playable game.
+Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene), the **hosting-infra** unit (one CDK v2 stack that serves the bundle from a private S3 bucket through CloudFront; see [infra/README.md](infra/README.md)), the **map-data** unit (`src/maps`), the **collision-nav** unit (`src/physics`, `src/nav`), the **player-combat** unit (`src/sim/player`, `src/weapons`, `src/combat`), the **hud** unit (`src/ui/hud`), the **presentation-3d** unit (`src/render`) and the **audio** unit (`src/audio`), the **bot-ai** unit (`src/ai`), the **game-simulation** unit (`src/sim`, `src/sim/stats`) the **app-shell** unit (`src/app`, `src/input`, `src/dev`), which composes everything into the playable game, and the **verification** unit (`scripts/verification`, `scripts/smoke.ts`, `scripts/report.ts`, `tests/verification`, `tests/e2e`), which produces the final report.
 
 ## Requirements
 
+- Supported browsers: current desktop Chrome, Edge and Firefox with WebGL2. Safari is best-effort. Nothing is installed; without WebGL2 the game shows a notice and no round can start.
 - Node 24 (`engines` is enforced through `.npmrc`), npm 11
 - Install with `npm ci`
 
@@ -24,6 +25,11 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 | `npm run audit`          | Advisory `npm audit` of production dependencies into `reports/audit.json` (not part of the gate)                                                                                                                                        |
 | `npm run check:seams`    | Fails if test-seam markers or a `dev*` chunk reach `dist/`, or the entry chunk exceeds 900 KB minified / 200 KB brotli; writes `reports/app-shell-bundle.json`                                                                          |
 | `npm run build:test`     | `vite build --mode test --outDir dist-test`: the e2e bundle with test seams (never deployed, not in the gate)                                                                                                                           |
+| `npm run e2e`            | `build:test`, then Playwright headless Chromium plays a seeded round and Play Again on both maps against `dist-test/` and writes `reports/e2e.json` (not in the gate; see below)                                                        |
+| `npm run smoke`          | Post-deploy smoke checks SM-1..SM-9 against `reports/cdk-outputs.json`, or blocked mode with the missing items; `-- --precheck` writes the credential precheck to `reports/precheck.json`                                               |
+| `npm run report`         | Classifies the evidence on disk and writes `reports/evidence.json` and `docs/FINAL-REPORT.md`; exits 1 while any check is `automated-fail`                                                                                              |
+| `npm run test:matrix`    | The 1/5/10/20-bot matrix on both maps on its own                                                                                                                                                                                        |
+| `npm run bench:ai`       | The bot-ai bench on its own (`reports/bot-ai-bench.json`)                                                                                                                                                                               |
 | `npm run verify`         | The gate: `lint && typecheck && test:coverage && build && synth && check:licences && check:seams`, failing fast                                                                                                                         |
 
 ## Controls
@@ -72,6 +78,17 @@ Controls cannot be rebound. Crouch is C only; Ctrl is not bound. `tests/ui/scree
 - Diagnostics go to `console.warn('[strikezone] <code>')` once per code, without detail.
 - Test seams (`window.__strikezone`, the pointer-lock bypass `?seams=bypass-lock`, the profiler overlay `?seams=overlay`) exist only in `npm run build:test` output (`dist-test/`, gitignored). The single guarded `import()` in `main.ts` is dead in production builds; `check:seams` scans `dist/`, and the CDK app refuses `dist-test/` or any bundle containing `__strikezone` (`infra/web-dir-test-bundle`).
 - Real pointer lock, the Ready-gate gesture timing, Alt-Tab and WebGL context loss are manual-pending browser checks.
+
+## Verification and final report
+
+`docs/FINAL-REPORT.md` is the delivery report (spec §16 items A–H, the §17 Definition of Done, cuts and known limitations). It is generated, never hand-edited:
+
+1. `npm ci && npm run verify` (Vitest also writes `reports/vitest-results.json`).
+2. `npm run e2e` (optional browser run; needs the headless Chromium setup in `docs/MANUAL-TESTS.md`).
+3. `npm run smoke -- --precheck`, then deploy only with credentials and approval (see [infra/README.md](infra/README.md)), then `npm run smoke`.
+4. `npm run report`.
+
+The check register in `scripts/verification/checks.ts` lists every spec §13 check and §17 row with its evidence. Only `automated-pass` and `manual-pass` count as passed; results older than the newest source file are `stale`, and a missing result is `not-verified`, never a pass. Checks that need a person (real pointer lock, audio, GPU frame rate, the deployed round) have scripts in `docs/MANUAL-TESTS.md`; a result counts only after the tester records it in `verification/manual-results.json`. Low is the recommended graphics preset for 15 and 20 bots.
 
 ## Verify gate
 

@@ -22,6 +22,11 @@
     "check:seams": "node scripts/check-seams.ts",
     "build:test": "vite build --mode test --outDir dist-test",
     "audit": "mkdir -p reports && npm audit --omit=dev --audit-level=high --json > reports/audit.json || true",
+    "test:matrix": "vitest run tests/sim/rounds.test.ts -t \"bot-count matrix\"",
+    "bench:ai": "vitest run tests/bench/bot-ai.bench.test.ts",
+    "e2e": "npm run build:test && playwright test",
+    "smoke": "node scripts/smoke.ts",
+    "report": "node scripts/report.ts",
     "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run synth && npm run check:licences && npm run check:seams"
   },
   "dependencies": {
@@ -29,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
     "@types/node": "24.19.2",
     "@types/three": "0.187.0",
     "@vitest/coverage-v8": "5.1.0",

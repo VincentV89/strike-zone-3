@@ -62,7 +62,7 @@ const EXACT_SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const TRUSTED_REGISTRY = 'https://registry.npmjs.org/';
 const MAX_TEXT_BYTES = 5 * 1024 * 1024;
 
-interface SecretRule {
+export interface SecretRule {
   id: string;
   pattern: RegExp;
   distOnly: boolean;
@@ -70,7 +70,7 @@ interface SecretRule {
 
 // Patterns are assembled from fragments so this file never contains a
 // literal the scanner would flag (SD-F-04).
-const SECRET_RULES: readonly SecretRule[] = [
+export const SECRET_RULES: readonly SecretRule[] = [
   { id: 'aws-access-key-id', pattern: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/, distOnly: false },
   {
     id: 'aws-secret-key-name',
