@@ -185,7 +185,7 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    files: ['scripts/**/*.ts', 'tests/**/*.ts', '*.config.ts'],
+    files: ['scripts/**/*.ts', 'tests/**/*.ts', 'infra/**/*.ts', '*.config.ts'],
     languageOptions: { globals: { ...globals.node } },
   },
   {

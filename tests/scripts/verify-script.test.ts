@@ -46,4 +46,27 @@ describe('npm run verify', () => {
     );
     expect(isOrderedSubsequence(REQUIRED_ORDER, reordered)).toBe(false);
   });
+
+  // hosting-infra (cicd-pipeline-hosting-infra): synth reuses the bundle that
+  // build produced and must finish before check:licences scans dist/.
+  it('runs synth after build and before check:licences', () => {
+    const steps = verifySteps(verify);
+    const synth = steps.indexOf('synth');
+    expect(synth).toBeGreaterThan(steps.indexOf('build'));
+    expect(synth).toBeLessThan(steps.indexOf('check:licences'));
+  });
+
+  it('runs synth strict, offline and in prebuilt mode with telemetry off', () => {
+    const synth = pkg.scripts['synth'] ?? '';
+    expect(synth).toContain('tsc -p tsconfig.infra.json');
+    for (const part of [
+      'SZ_SKIP_WEB_BUILD=1',
+      'CDK_DISABLE_CLI_TELEMETRY=true',
+      '--strict',
+      '--no-notices',
+    ]) {
+      expect(synth).toContain(part);
+    }
+    expect(pkg.scripts['build:web']).toBe('vite build');
+  });
 });
