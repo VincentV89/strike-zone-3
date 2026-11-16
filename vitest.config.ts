@@ -24,6 +24,10 @@ export default defineConfig({
         'src/core/**': { lines: 80 },
         'src/maps/**': { lines: 80 }, // BR-M-92
         'src/ui/hud/**': { lines: 80 },
+        'src/settings/**': { lines: 80 },
+        'src/persistence/**': { lines: 80 },
+        'src/ui/screens/**': { lines: 80 },
+        'src/ui/components/**': { lines: 80 },
       },
     },
   },

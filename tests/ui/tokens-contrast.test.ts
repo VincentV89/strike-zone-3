@@ -1,4 +1,7 @@
 /**
+ * WCAG 2.x contrast computed from src/ui/tokens.css, the only token source
+ * (TS-MS-03). Re-run whenever a token changes.
+ *
  * HUD contrast check (design-system-mapping 2.1, accessibility-checklist,
  * SD-H-09). Recomputes the worst case from src/ui/tokens.css: every HUD text
  * colour on the bg-0 plate at its opacity, composited over a white sky.
@@ -33,6 +36,69 @@ function contrast(a: [number, number, number], b: [number, number, number]): num
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
   return (hi + 0.05) / (lo + 0.05);
 }
+
+/** Contrast between two colour tokens, named without the `--c-` prefix. */
+function tokenContrast(fg: string, bg: string): number {
+  return contrast(rgb(token(`c-${fg}`)), rgb(token(`c-${bg}`)));
+}
+
+describe('menu contrast pairs (BR-MS-41)', () => {
+  it.each([
+    ['text', 'bg-0'],
+    ['text', 'bg-1'],
+    ['text', 'bg-2'],
+    ['text-2', 'bg-0'],
+    ['text-2', 'bg-1'],
+    ['text-2', 'bg-2'],
+    ['muted', 'bg-1'],
+    ['muted', 'bg-2'],
+    ['on-accent', 'accent'],
+    ['danger', 'bg-1'],
+    ['ok', 'bg-1'],
+  ])('%s on %s is at least 4.5:1', (fg, bg) => {
+    expect(tokenContrast(fg, bg)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each([
+    ['edge', 'bg-0'],
+    ['edge', 'bg-1'],
+    ['accent', 'bg-1'],
+    ['accent', 'bg-0'],
+  ])('control border or focus ring %s on %s is at least 3:1', (fg, bg) => {
+    expect(tokenContrast(fg, bg)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('matches a known reference ratio', () => {
+    expect(contrast(rgb('#ffffff'), rgb('#000000'))).toBeCloseTo(21, 5);
+  });
+});
+
+describe('motion (PERF-MS-12, PD-MS-07)', () => {
+  const screens = readFileSync('src/ui/screens/screens.css', 'utf8');
+
+  it('transitions only transform and opacity', () => {
+    const transitions = [...screens.matchAll(/transition:\s*([^;]+);/g)].map((m) => m[1] ?? '');
+    expect(transitions.length).toBeGreaterThan(0);
+    for (const t of transitions) {
+      for (const part of t.split(',')) {
+        expect(part.trim().split(/\s+/)[0]).toMatch(/^(opacity|transform)$/);
+      }
+    }
+    expect(screens).not.toMatch(/@keyframes/);
+  });
+
+  it('sets the motion tokens to 0ms under prefers-reduced-motion', () => {
+    const block =
+      /@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
+    for (const t of ['--motion-fast', '--motion-med', '--m-fast', '--m-fade']) {
+      expect(block).toMatch(new RegExp(`${t}:\\s*0ms`));
+    }
+  });
+
+  it('screens.css uses only tokens for colours (no raw hex)', () => {
+    expect(screens).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
+  });
+});
 
 describe('HUD plate contrast (WCAG 1.4.3)', () => {
   const alpha = Number(token('hud-plate-alpha'));
