@@ -354,10 +354,72 @@ const RENDER_IMPORTS = {
   ],
 };
 
+/**
+ * app-shell (security-design-app-shell SD-AS-05/06). src/app, src/input and
+ * src/dev are browser code but use no network, storage, timers or listeners
+ * directly: main.ts reads the globals once, src/app/scope.ts owns listeners
+ * and timers, frame-loop.ts owns requestAnimationFrame and diagnostics.ts is
+ * the only console writer. Lists from the src/** block are spread back in.
+ */
+const APP_FILES = ['src/app/**/*.ts', 'src/input/**/*.ts', 'src/dev/**/*.ts'];
+const APP_STORAGE_NAMES = ['localStorage', 'sessionStorage', 'indexedDB'];
+const APP_TIMER_NAMES = ['setInterval', 'setTimeout', 'requestAnimationFrame'];
+const APP_OTHER_NAMES = [
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'EventSource',
+  'caches',
+  'Worker',
+  'SharedWorker',
+];
+const appGlobal = (name) => ({
+  name,
+  message: `app-shell code must not use ${name} directly (SD-AS-05).`,
+});
+const appGlobals = (drop = []) =>
+  [...APP_OTHER_NAMES, ...APP_STORAGE_NAMES, ...APP_TIMER_NAMES]
+    .filter((n) => !drop.includes(n))
+    .map(appGlobal);
+const APP_STORAGE_PROPERTIES = [
+  { object: 'window', property: 'localStorage', message: 'Only main.ts reads storage (SD-AS-08).' },
+  { object: 'window', property: 'sessionStorage', message: 'No sessionStorage (SD-AS-05).' },
+  { object: 'window', property: 'indexedDB', message: 'No indexedDB (SD-AS-05).' },
+];
+const APP_PROPERTIES = [
+  ...SRC_RESTRICTED_PROPERTIES,
+  JSON_PARSE_BAN,
+  { object: 'navigator', property: 'sendBeacon', message: 'app-shell sends nothing (SD-AS-05).' },
+  { object: 'document', property: 'cookie', message: 'No cookies (SD-AS-05).' },
+];
+const APP_CONSOLE_BAN = {
+  selector: "CallExpression[callee.object.name='console']",
+  message: 'Report through Diagnostics; only src/app/diagnostics.ts writes the console (SD-AS-15).',
+};
+const APP_CONSOLE_WARN_ONLY = {
+  selector: "CallExpression[callee.object.name='console'][callee.property.name!='warn']",
+  message: 'diagnostics.ts may call console.warn only (TS-AS-08).',
+};
+const APP_IMPORT_EXPRESSION_BAN = {
+  selector: 'ImportExpression',
+  message: 'The only dynamic import() is the guarded seam import in main.ts (SD-AS-01).',
+};
+const APP_ADD_EVENT_LISTENER_BAN = {
+  selector: "CallExpression[callee.property.name='addEventListener']",
+  message: 'Register listeners through src/app/scope.ts (PD-AS-01, SD-AS-05).',
+};
+const appSyntax = ({ console = APP_CONSOLE_BAN, dynamicImport = true, listeners = true } = {}) => [
+  ...UI_SYNTAX,
+  ...(dynamicImport ? [APP_IMPORT_EXPRESSION_BAN] : []),
+  ...(listeners ? [APP_ADD_EVENT_LISTENER_BAN] : []),
+  console,
+];
+
 export default tseslint.config(
   {
     ignores: [
       'dist/**',
+      'dist-test/**',
       'coverage/**',
       'cdk.out/**',
       'reports/**',
@@ -396,6 +458,8 @@ export default tseslint.config(
             'src/ai/brain/__probe__.ts',
             'src/sim/__probe__.ts',
             'src/sim/stats/__probe__.ts',
+            'src/input/__probe__.ts',
+            'src/dev/__probe__.ts',
           ],
           // The bot-ai probes make one ring-lint process open more than the default 8
           // default-project files (BR-AI-91, SD-AI-05).
@@ -592,6 +656,43 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    // app-shell block (SD-AS-05). Does not set no-restricted-imports, so the
+    // src/** TEST_DOM_IMPORTS ban stays in force.
+    files: APP_FILES,
+    rules: {
+      'no-restricted-globals': ['error', ...appGlobals()],
+      'no-restricted-properties': ['error', ...APP_PROPERTIES, ...APP_STORAGE_PROPERTIES],
+      'no-restricted-syntax': ['error', ...appSyntax()],
+    },
+  },
+  {
+    // main.ts reads storage once and holds the single guarded seam import (SD-AS-01, SD-AS-08).
+    files: ['src/app/main.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...appGlobals(APP_STORAGE_NAMES)],
+      'no-restricted-properties': ['error', ...APP_PROPERTIES],
+      'no-restricted-syntax': ['error', ...appSyntax({ dynamicImport: false })],
+    },
+  },
+  {
+    // scope.ts owns every app-shell listener and timer (PD-AS-01).
+    files: ['src/app/scope.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...appGlobals(['setTimeout'])],
+      'no-restricted-syntax': ['error', ...appSyntax({ listeners: false })],
+    },
+  },
+  {
+    // frame-loop.ts owns the single requestAnimationFrame loop (SD-AS-06).
+    files: ['src/app/frame-loop.ts'],
+    rules: { 'no-restricted-globals': ['error', ...appGlobals(['requestAnimationFrame'])] },
+  },
+  {
+    // diagnostics.ts is the browser Diagnostics sink: console.warn only (TS-AS-08).
+    files: ['src/app/diagnostics.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...appSyntax({ console: APP_CONSOLE_WARN_ONLY })] },
   },
   prettier,
 );

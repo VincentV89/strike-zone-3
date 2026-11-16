@@ -69,4 +69,13 @@ describe('npm run verify', () => {
     }
     expect(pkg.scripts['build:web']).toBe('vite build');
   });
+
+  // app-shell (cicd-pipeline-app-shell): check:seams scans the final dist/ last.
+  it('runs check:seams as the last step and keeps build:test out of the gate', () => {
+    const steps = verifySteps(verify);
+    expect(steps.at(-1)).toBe('check:seams');
+    expect(pkg.scripts['check:seams']).toBe('node scripts/check-seams.ts');
+    expect(pkg.scripts['build:test']).toBe('vite build --mode test --outDir dist-test');
+    expect(steps).not.toContain('build:test');
+  });
 });

@@ -19,7 +19,14 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.ts'],
       // gl-host.ts is the WebGL boundary, covered by the manual browser check (NFR-P-Q2).
-      exclude: ['src/contracts/**', 'src/app/main.ts', 'src/render/gl-host.ts', '**/*.d.ts'],
+      // main.ts and pointer-lock.ts are the browser boundary of app-shell (manual-pending checks).
+      exclude: [
+        'src/contracts/**',
+        'src/app/main.ts',
+        'src/app/pointer-lock.ts',
+        'src/render/gl-host.ts',
+        '**/*.d.ts',
+      ],
       reporter: ['text-summary', 'json-summary'],
       reportsDirectory: 'coverage',
       thresholds: {
@@ -40,6 +47,9 @@ export default defineConfig({
         'src/combat/**': { lines: 80 }, // TS-PC-09
         'src/audio/**': { lines: 80 }, // BR-AU-92
         'src/ai/**': { lines: 80 }, // BR-AI-91
+        'src/app/**': { lines: 80 }, // app-shell (business-logic-model-app-shell §15)
+        'src/input/**': { lines: 80 },
+        'src/dev/**': { lines: 80 },
       },
     },
   },

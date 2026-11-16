@@ -1,6 +1,6 @@
 # StrikeZone
 
-Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene), the **hosting-infra** unit (one CDK v2 stack that serves the bundle from a private S3 bucket through CloudFront; see [infra/README.md](infra/README.md)), the **map-data** unit (`src/maps`), the **collision-nav** unit (`src/physics`, `src/nav`), the **player-combat** unit (`src/sim/player`, `src/weapons`, `src/combat`), the **hud** unit (`src/ui/hud`), the **presentation-3d** unit (`src/render`) and the **audio** unit (`src/audio`), the **bot-ai** unit (`src/ai`) and the **game-simulation** unit (`src/sim`, `src/sim/stats`).
+Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene), the **hosting-infra** unit (one CDK v2 stack that serves the bundle from a private S3 bucket through CloudFront; see [infra/README.md](infra/README.md)), the **map-data** unit (`src/maps`), the **collision-nav** unit (`src/physics`, `src/nav`), the **player-combat** unit (`src/sim/player`, `src/weapons`, `src/combat`), the **hud** unit (`src/ui/hud`), the **presentation-3d** unit (`src/render`) and the **audio** unit (`src/audio`), the **bot-ai** unit (`src/ai`), the **game-simulation** unit (`src/sim`, `src/sim/stats`) and the **app-shell** unit (`src/app`, `src/input`, `src/dev`), which composes everything into the playable game.
 
 ## Requirements
 
@@ -11,7 +11,7 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 
 | Script                   | What it does                                                                                                                                                                                                                            |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`            | Vite dev server for the skeleton page                                                                                                                                                                                                   |
+| `npm run dev`            | Vite dev server for the game                                                                                                                                                                                                            |
 | `npm run lint`           | `eslint . --max-warnings 0 && prettier --check .`                                                                                                                                                                                       |
 | `npm run typecheck`      | `tsc --noEmit` (strict, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`)                                                                                                                                                             |
 | `npm test`               | Vitest (Node environment, at most 2 workers)                                                                                                                                                                                            |
@@ -22,7 +22,9 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 | `npm run synth`          | Infra typecheck, then offline `cdk synth --strict` on the prebuilt `dist/` (no credentials)                                                                                                                                             |
 | `npm run check:licences` | Licence, pinning, asset, secret and `dist/` checks; writes `reports/licences.json`                                                                                                                                                      |
 | `npm run audit`          | Advisory `npm audit` of production dependencies into `reports/audit.json` (not part of the gate)                                                                                                                                        |
-| `npm run verify`         | The gate: `lint && typecheck && test:coverage && build && synth && check:licences`, failing fast                                                                                                                                        |
+| `npm run check:seams`    | Fails if test-seam markers or a `dev*` chunk reach `dist/`, or the entry chunk exceeds 900 KB minified / 200 KB brotli; writes `reports/app-shell-bundle.json`                                                                          |
+| `npm run build:test`     | `vite build --mode test --outDir dist-test`: the e2e bundle with test seams (never deployed, not in the gate)                                                                                                                           |
+| `npm run verify`         | The gate: `lint && typecheck && test:coverage && build && synth && check:licences && check:seams`, failing fast                                                                                                                         |
 
 ## Controls
 
@@ -58,6 +60,18 @@ Controls cannot be rebound. Crouch is C only; Ctrl is not bound. `tests/ui/scree
 - Every voice goes through effects bus → master bus → limiter → destination. Either volume at 0 creates no nodes. At most 24 live voices and 12 new voices per frame; extra requests are dropped and counted as `audio/voice-dropped`.
 - Only `src/audio/context.ts` reads a browser global, and only `src/app/features.ts` may import `src/audio` (ESLint blocks plus `tests/arch`). To cut audio, remove that import, delete `src/audio`, delete the `app-shell → audio` row and hide the Audio settings group.
 - Audible output is checked by a manual listening script, which stays manual-pending until someone runs it in a browser.
+
+## App shell
+
+- `src/app/main.ts` is the only file that reads browser globals. It builds `BrowserCaps`, the storage handle, the seed source and the pointer-lock port, then calls `createApp(deps).start(root)`. Everything below it receives functions, so it runs in Node or happy-dom tests.
+- `src/app/machine.ts` is a pure reducer over the AppState machine (`boot`, `unsupported`, `menu`, `loading`, `loading-error`, `ready`, `countdown`, `live`, `paused`, `eliminated`, `end`; rows AS-T01..AS-T31). It returns effects as data, and every row that leaves a round releases pointer lock first.
+- Loading has four steps with real progress: `map` (geometry plus `renderer.buildMap`), `nav` (the bake), `bots` (simulation, stats, actors) and `shaders` (`precompile`). Retry starts at the failed step. Restart and Play Again rebuild in place with a fresh seed and never reload the page; an abandoned round calls `stats.discard()` and is not written to history.
+- `src/app/frame-loop.ts` runs the one `requestAnimationFrame` loop. The simulation steps only in countdown and live; every entry into either resets the clock, so a resume never runs a catch-up burst. A frame that throws is skipped and reported once as `app/frame-fault`; 30 faulted frames in a row move the round to the loading-error screen (`app/frame-fault-tripped`).
+- Pause opens on `pointerlockchange` or a hidden tab, never on an Esc keydown. Every pointer-lock request is made synchronously inside a click or Enter handler.
+- `src/input` maps `KeyboardEvent.code`, so the layout does not matter. While the sniper scope is held, mouse deltas are multiplied by `tan(scopedVFov/2) / tan(vFov/2)` (about 0.25).
+- Diagnostics go to `console.warn('[strikezone] <code>')` once per code, without detail.
+- Test seams (`window.__strikezone`, the pointer-lock bypass `?seams=bypass-lock`, the profiler overlay `?seams=overlay`) exist only in `npm run build:test` output (`dist-test/`, gitignored). The single guarded `import()` in `main.ts` is dead in production builds; `check:seams` scans `dist/`, and the CDK app refuses `dist-test/` or any bundle containing `__strikezone` (`infra/web-dir-test-bundle`).
+- Real pointer lock, the Ready-gate gesture timing, Alt-Tab and WebGL context loss are manual-pending browser checks.
 
 ## Verify gate
 

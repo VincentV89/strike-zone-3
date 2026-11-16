@@ -78,6 +78,7 @@ describe('build-mode bundling', () => {
         'cdk.out',
         'coverage',
         'dist',
+        'dist-test',
         'node_modules',
         'reports',
       ].sort(),

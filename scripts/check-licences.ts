@@ -32,6 +32,7 @@ const WALK_EXCLUDED_DIRS = new Set([
   '.git',
   'node_modules',
   'dist',
+  'dist-test', // app-shell test bundle (SD-AS-03), never deployed
   'cdk.out',
   'coverage',
   'reports',
@@ -48,6 +49,7 @@ const ASSET_EXTENSIONS = new Set(
 const REQUIRED_IGNORE_LINES = [
   'node_modules/',
   'dist/',
+  'dist-test/',
   'cdk.out/',
   'coverage/',
   '.kiro-data/',

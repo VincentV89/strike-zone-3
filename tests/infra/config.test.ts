@@ -6,7 +6,12 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { parseWebSource, REPO_ROOT, resolveWebDir } from '../../infra/lib/config.ts';
+import {
+  assertNotTestBundle,
+  parseWebSource,
+  REPO_ROOT,
+  resolveWebDir,
+} from '../../infra/lib/config.ts';
 import { FIXTURE_DIR } from './synth.ts';
 
 const scratch = mkdtempSync(path.join(tmpdir(), 'sz-config-'));
@@ -65,5 +70,38 @@ describe('infra config', () => {
     expect(() => parseWebSource({ SZ_SKIP_WEB_BUILD: '1' }, scratch)).toThrow(
       'infra/web-dir-missing',
     );
+  });
+});
+
+describe('test-bundle deploy guard (ID-AS-03)', () => {
+  const testRoot = path.join(scratch, 'guard-root');
+  const testDist = path.join(testRoot, 'dist-test');
+  const marked = path.join(scratch, 'marked');
+  const clean = path.join(scratch, 'clean');
+  for (const dir of [testDist, marked, clean]) {
+    mkdirSync(path.join(dir, 'assets'), { recursive: true });
+    writeFileSync(path.join(dir, 'index.html'), '<!doctype html>');
+  }
+  writeFileSync(path.join(testDist, 'assets', 'index.js'), 'export {};');
+  // Built by concatenation so this test file itself carries no marker literal.
+  writeFileSync(path.join(marked, 'assets', 'index-x.js'), `window.${'__strike' + 'zone'}={};`);
+  writeFileSync(path.join(clean, 'assets', 'index-x.js'), 'export {};');
+
+  it('rejects <repo>/dist-test by path', () => {
+    expect(() => resolveWebDir(testDist, testRoot)).toThrow('infra/web-dir-test-bundle');
+    expect(() =>
+      parseWebSource({ SZ_SKIP_WEB_BUILD: '1', SZ_WEB_DIR: testDist }, testRoot),
+    ).toThrow('infra/web-dir-test-bundle');
+  });
+
+  it('rejects any directory whose assets JS contains the seam marker', () => {
+    expect(() => resolveWebDir(marked)).toThrow('infra/web-dir-test-bundle');
+  });
+
+  it('accepts a clean bundle and a bundle without assets/', () => {
+    expect(resolveWebDir(clean)).toBe(clean);
+    expect(() => {
+      assertNotTestBundle(path.join(fakeRoot, 'dist'), fakeRoot);
+    }).not.toThrow();
   });
 });
