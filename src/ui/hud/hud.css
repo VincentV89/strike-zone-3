@@ -1,0 +1,570 @@
+/*
+ * StrikeZone HUD (frontend-components-hud, performance-design-hud PD-H-06).
+ * Dynamic values arrive as CSS custom properties set through CSSOM on the
+ * element that moves, and are read only inside transform and opacity, so a
+ * changed value never causes layout. No rule turns pointer events back on.
+ */
+@import '../tokens.css';
+
+.hud-root {
+  --hud-inset: clamp(12px, 2vh, 32px);
+  --hud-safe-x: 0px;
+
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-hud);
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  color: var(--c-text);
+  font-family: var(--f-ui);
+  font-size: clamp(12px, 1.6vh, 18px);
+  letter-spacing: 0.04em;
+}
+
+/* Centred 16:9 safe area on wide screens. */
+@media (min-width: 1440px) and (min-aspect-ratio: 16/9) {
+  .hud-root {
+    --hud-safe-x: calc((100vw - 100vh * 16 / 9) / 2);
+  }
+}
+
+.hud-plate {
+  background: var(--hud-plate);
+  border-radius: var(--r2);
+  padding: var(--s2) var(--s3);
+}
+
+.hud-num {
+  font-family: var(--f-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-label,
+.hud-tag {
+  color: var(--c-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.hud-tag {
+  font-size: var(--t-xs);
+}
+
+.hud-sep {
+  color: var(--c-text-2);
+  margin: 0 var(--s1);
+}
+
+/* Corners --------------------------------------------------------------- */
+
+.hud-corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  contain: layout paint;
+}
+
+.hud-tl {
+  top: var(--hud-inset);
+  left: calc(var(--hud-inset) + var(--hud-safe-x));
+}
+
+.hud-tc {
+  top: var(--hud-inset);
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+.hud-tr {
+  top: var(--hud-inset);
+  right: calc(var(--hud-inset) + var(--hud-safe-x));
+  align-items: flex-end;
+}
+
+.hud-bl {
+  bottom: var(--hud-inset);
+  left: calc(var(--hud-inset) + var(--hud-safe-x));
+}
+
+.hud-br {
+  bottom: var(--hud-inset);
+  right: calc(var(--hud-inset) + var(--hud-safe-x));
+  align-items: flex-end;
+}
+
+/* Bars ------------------------------------------------------------------ */
+
+.hud-bar {
+  display: inline-block;
+  width: 8em;
+  height: 6px;
+  background: var(--c-bg-2);
+  border-radius: var(--r1);
+  overflow: hidden;
+}
+
+.hud-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--c-text);
+  transform: scaleX(var(--fill, 1));
+  transform-origin: left center;
+}
+
+/* Vitals ---------------------------------------------------------------- */
+
+.hud-vitals {
+  position: relative;
+}
+
+.hud-vitals-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.hud-vitals .hud-num {
+  min-width: 3ch;
+  font-size: clamp(20px, 3vh, 36px);
+  text-align: right;
+}
+
+.is-armor .hud-glyph,
+.is-armor .hud-num {
+  color: var(--c-armor);
+}
+
+.is-armor .hud-bar-fill {
+  background: var(--c-armor);
+}
+
+.hud-low-tag {
+  display: none;
+  color: var(--c-danger);
+}
+
+.hud-vitals.is-low .hud-low-tag {
+  display: inline;
+}
+
+.hud-vitals.is-low .is-health .hud-num,
+.hud-vitals.is-low .is-health .hud-glyph {
+  color: var(--c-danger);
+}
+
+.hud-vitals.is-low .is-health .hud-bar-fill {
+  background: var(--c-danger);
+}
+
+.hud-vitals.is-low::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid var(--c-danger);
+  border-radius: var(--r2);
+  opacity: var(--pulse, 1);
+}
+
+/* Weapon and prompt ------------------------------------------------------ */
+
+.hud-weapon {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s1);
+}
+
+.hud-weapon-name {
+  letter-spacing: 0.12em;
+}
+
+.hud-weapon.is-switching .hud-weapon-name {
+  color: var(--c-text-2);
+}
+
+.hud-ammo .hud-mag {
+  font-size: clamp(20px, 3vh, 36px);
+}
+
+.hud-ammo .hud-reserve {
+  color: var(--c-text-2);
+}
+
+.hud-weapon.is-empty .hud-mag {
+  color: var(--c-danger);
+}
+
+.hud-slots {
+  display: flex;
+  gap: var(--s1);
+}
+
+.hud-slot {
+  min-width: 1.4em;
+  text-align: center;
+  color: var(--c-text-2);
+  border: 2px solid transparent;
+  border-radius: var(--r1);
+}
+
+.hud-slot.is-active {
+  color: var(--c-text);
+  border-color: var(--c-accent);
+}
+
+.hud-reload {
+  display: none;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.hud-weapon.is-reloading .hud-reload {
+  display: flex;
+}
+
+.hud-weapon.is-reloading .hud-slots {
+  display: none;
+}
+
+.hud-reload .hud-bar-fill {
+  background: var(--c-accent);
+}
+
+.hud-prompt {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  display: none;
+  transform: translateX(-50%);
+  letter-spacing: 0.12em;
+}
+
+.hud-prompt.is-visible {
+  display: block;
+}
+
+/* Timer and enemy counter ----------------------------------------------- */
+
+.hud-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid transparent;
+}
+
+.hud-round {
+  display: none;
+  gap: var(--s1);
+  font-size: var(--t-xs);
+}
+
+.hud-timer.has-round .hud-round {
+  display: flex;
+}
+
+.hud-clock {
+  font-size: clamp(18px, 3.2vh, 40px);
+  transition: transform var(--m-fast) ease-out;
+}
+
+.hud-last-ten-tag {
+  display: none;
+  color: var(--c-accent);
+}
+
+.hud-timer.is-last-ten {
+  border-color: var(--c-accent);
+}
+
+.hud-timer.is-last-ten .hud-clock {
+  transform: scale(1.25);
+}
+
+.hud-timer.is-last-ten .hud-last-ten-tag {
+  display: inline;
+}
+
+.hud-counter {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+}
+
+/* Centre SVG: viewBox centred on 0,0 in 1080p reference pixels ----------- */
+
+.hud-centre {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vh;
+  height: 100vh;
+  overflow: visible;
+  transform: translate(-50%, -50%);
+  contain: layout;
+}
+
+.hud-crosshair.hidden {
+  display: none;
+}
+
+.hud-xh-arm {
+  stroke: var(--c-text);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.hud-xh-arm.is-up {
+  transform: translateY(calc(var(--gap, 3) * -1px));
+}
+
+.hud-xh-arm.is-down {
+  transform: translateY(calc(var(--gap, 3) * 1px));
+}
+
+.hud-xh-arm.is-left {
+  transform: translateX(calc(var(--gap, 3) * -1px));
+}
+
+.hud-xh-arm.is-right {
+  transform: translateX(calc(var(--gap, 3) * 1px));
+}
+
+.hud-hit {
+  display: none;
+  stroke-linecap: round;
+}
+
+.hud-hit.is-visible {
+  display: inline;
+}
+
+.hud-hit.is-body {
+  stroke: var(--c-text);
+  stroke-width: 2.5;
+}
+
+.hud-hit.is-head {
+  stroke: var(--c-accent);
+  stroke-width: 3.5;
+}
+
+.hud-arc {
+  display: none;
+  fill: none;
+  stroke: var(--c-danger);
+  stroke-width: 10;
+  stroke-linecap: round;
+  opacity: var(--o, 0);
+  transform: rotate(var(--arc-rot, 0deg));
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+
+.hud-arc.is-visible {
+  display: inline;
+}
+
+/* Damage vignette (WCAG 2.3.1: rises are rate-limited in model/transients.ts) */
+
+.hud-vignette {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgb(255 107 107 / 85%) 100%);
+  opacity: var(--v, 0);
+}
+
+.hud-vignette.is-visible {
+  display: block;
+}
+
+/* Sniper scope (presentation-3d owns the FOV zoom) ---------------------- */
+
+.hud-scope {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: none;
+  background: radial-gradient(circle at center, transparent 0 38vh, #000 38.5vh);
+}
+
+.hud-scope.is-visible {
+  display: block;
+}
+
+.hud-scope-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vh;
+  height: 100vh;
+  transform: translate(-50%, -50%);
+  fill: none;
+  stroke: #000;
+  stroke-width: 2;
+}
+
+/* Kill feed (Should) ----------------------------------------------------- */
+
+.hud-killfeed {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s1);
+}
+
+.hud-killfeed.is-empty {
+  display: none;
+}
+
+.hud-kill {
+  display: none;
+  gap: var(--s2);
+  border-right: 3px solid transparent;
+  opacity: var(--o, 1);
+}
+
+.hud-kill.is-visible {
+  display: flex;
+}
+
+.hud-kill.is-player {
+  border-right-color: var(--c-accent);
+}
+
+.hud-kill-weapon {
+  color: var(--c-text-2);
+}
+
+.hud-kill-hs {
+  display: none;
+  color: var(--c-accent);
+}
+
+.hud-kill.has-hs .hud-kill-hs {
+  display: inline;
+}
+
+/* Radar (Should) --------------------------------------------------------- */
+
+.hud-radar {
+  width: clamp(120px, 18vh, 200px);
+  height: clamp(120px, 18vh, 200px);
+  padding: var(--s1);
+  border-radius: 50%;
+}
+
+.hud-radar-disc,
+.hud-radar-range {
+  fill: none;
+  stroke: var(--c-edge);
+  stroke-width: 1.5;
+}
+
+.hud-radar-cone {
+  fill: rgb(232 236 241 / 10%);
+}
+
+.hud-radar-self {
+  fill: var(--c-text);
+}
+
+.hud-blip {
+  display: none;
+  fill: var(--c-danger);
+  stroke: var(--c-danger);
+  stroke-width: 2;
+  opacity: var(--o, 1);
+  transform: translate(calc(var(--blip-x, 0) * 1px), calc(var(--blip-y, 0) * 1px));
+}
+
+.hud-blip.is-visible {
+  display: inline;
+}
+
+.hud-blip.is-heard {
+  fill: none;
+}
+
+/* Scoreboard (Should) ---------------------------------------------------- */
+
+.hud-scoreboard {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: var(--z-overlay);
+  display: none;
+  min-width: 28em;
+  padding: var(--s4) var(--s5);
+  transform: translate(-50%, -50%);
+}
+
+.hud-scoreboard.is-visible {
+  display: block;
+}
+
+.hud-sb-header,
+.hud-sb-player {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+
+.hud-sb-round-label,
+.hud-sb-round {
+  display: none;
+}
+
+.hud-scoreboard.has-round .hud-sb-round-label,
+.hud-scoreboard.has-round .hud-sb-round {
+  display: inline;
+}
+
+.hud-sb-stat {
+  display: flex;
+  gap: var(--s1);
+}
+
+.hud-sb-bots {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s1) var(--s5);
+}
+
+.hud-sb-bots.two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+.hud-sb-bot {
+  display: none;
+  justify-content: space-between;
+  gap: var(--s4);
+}
+
+.hud-sb-bot.is-visible {
+  display: flex;
+}
+
+.hud-sb-bot-status {
+  color: var(--c-ok);
+}
+
+.hud-sb-bot.is-dead .hud-sb-bot-status {
+  color: var(--c-text-2);
+}
+
+/* Reduced motion: no scale tween (the JS flag also stops the pulse and fades) */
+
+.hud-root.reduced-motion .hud-clock {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-clock {
+    transition: none;
+  }
+}
