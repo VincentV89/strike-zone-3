@@ -4,7 +4,7 @@
  * filesystem. Infra is delivery-ring code and does not import src/core, so
  * failures are plain Errors whose message starts with an `infra/<kebab>` code.
  */
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 /** Repository root, resolved from this file and never from cwd (TS-H-03). */
@@ -33,7 +33,34 @@ export function resolveWebDir(raw: string | undefined, repoRoot: string = REPO_R
   if (!hasIndexHtml(dir)) {
     throw new Error(`infra/web-dir-missing: ${dir} must be a directory containing index.html`);
   }
+  assertNotTestBundle(dir, repoRoot);
   return dir;
+}
+
+/** Marker the app-shell test seams put on window; never in a deployable bundle. */
+export const TEST_BUNDLE_MARKER = '__strikezone';
+
+/**
+ * The `--mode test` bundle (dist-test/) carries the test seams and the
+ * pointer-lock bypass, so it must never be published (deployment-architecture-app-shell
+ * ID-AS-03). Rejects <repo>/dist-test and any directory whose assets/*.js
+ * contains the seam marker.
+ */
+export function assertNotTestBundle(dir: string, repoRoot: string = REPO_ROOT): void {
+  const resolved = path.resolve(dir);
+  if (resolved === path.join(path.resolve(repoRoot), 'dist-test')) {
+    throw new Error(`infra/web-dir-test-bundle: ${resolved} is the test bundle; deploy dist/`);
+  }
+  const assets = path.join(resolved, 'assets');
+  if (!existsSync(assets) || !statSync(assets).isDirectory()) return;
+  for (const name of readdirSync(assets)) {
+    if (!name.endsWith('.js')) continue;
+    if (readFileSync(path.join(assets, name), 'latin1').includes(TEST_BUNDLE_MARKER)) {
+      throw new Error(
+        `infra/web-dir-test-bundle: ${path.join(assets, name)} contains test seams; deploy dist/`,
+      );
+    }
+  }
 }
 
 /**

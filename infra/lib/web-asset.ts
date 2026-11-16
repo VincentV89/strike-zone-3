@@ -25,6 +25,7 @@ export const SOURCE_EXCLUDES: readonly string[] = [
   'node_modules',
   'cdk.out',
   'dist',
+  'dist-test', // app-shell test bundle, never part of the asset hash (ID-AS-03)
   'coverage',
   'reports',
   '.kiro-data',

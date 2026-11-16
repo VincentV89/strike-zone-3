@@ -13,6 +13,7 @@ import {
 const GOOD_IGNORE = [
   'node_modules/',
   'dist/',
+  'dist-test/',
   'cdk.out/',
   'coverage/',
   'reports/',
