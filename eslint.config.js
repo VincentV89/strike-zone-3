@@ -229,6 +229,75 @@ const MAPS_BANNED_GLOBALS = ['structuredClone'].map((name) => ({
   message: `Map data must not use ${name} (SEC-M-01).`,
 }));
 
+/**
+ * audio (security-design-audio SD-AU-04). Only src/audio/context.ts reads a
+ * browser global; everything else in src/audio gets the AudioContextLike it
+ * is given.
+ */
+const AUDIO_BANNED_NAMES = [
+  'window',
+  'document',
+  'self',
+  'globalThis',
+  'navigator',
+  'localStorage',
+  'sessionStorage',
+  'indexedDB',
+  'caches',
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'EventSource',
+  'Worker',
+  'importScripts',
+  'URL',
+  'Audio',
+  'HTMLAudioElement',
+  'MediaElementAudioSourceNode',
+  'MediaStreamAudioSourceNode',
+  'AudioWorkletNode',
+  'OfflineAudioContext',
+  'AnalyserNode',
+  'ScriptProcessorNode',
+  'webkitAudioContext',
+  'performance',
+  'Date',
+  'setTimeout',
+  'setInterval',
+  'requestAnimationFrame',
+  'queueMicrotask',
+];
+const audioGlobal = (name) => ({
+  name,
+  message: `Audio code must not use ${name}; only src/audio/context.ts touches globals (SD-AU-04).`,
+});
+const AUDIO_BANNED_GLOBALS = AUDIO_BANNED_NAMES.map(audioGlobal);
+const AUDIO_CONTEXT_BANNED_GLOBALS = AUDIO_BANNED_NAMES.filter((n) => n !== 'globalThis').map(
+  audioGlobal,
+);
+const AUDIO_RESTRICTED_PROPERTIES = [
+  ...SRC_RESTRICTED_PROPERTIES,
+  { object: 'Math', property: 'random', message: 'Use the seeded audio Rng (BR-AU-62).' },
+  ...[
+    'decodeAudioData',
+    'audioWorklet',
+    'createAnalyser',
+    'createScriptProcessor',
+    'createMediaElementSource',
+    'createMediaStreamSource',
+    'createMediaStreamDestination',
+    'copyFromChannel',
+    'createObjectURL',
+  ].map((property) => ({
+    property,
+    message: `Audio synthesises from oscillators and one noise buffer; ${property} is banned (SEC-AU-08).`,
+  })),
+];
+const AUDIO_IMPORT_EXPRESSION_BAN = {
+  selector: 'ImportExpression',
+  message: 'No dynamic import() in src/audio (SD-AU-04).',
+};
+
 export default tseslint.config(
   {
     ignores: [
@@ -260,6 +329,7 @@ export default tseslint.config(
             'src/ui/screens/__probe__.ts',
             'src/ui/components/__probe__.ts',
             'src/persistence/__probe__.ts',
+            'src/audio/__probe__.ts',
           ],
         },
         tsconfigRootDir: import.meta.dirname,
@@ -408,6 +478,34 @@ export default tseslint.config(
         SET_ATTRIBUTE_NS_STYLE_OR_ON,
         IMPORT_EXPRESSION_BAN,
         ADD_EVENT_LISTENER_BAN,
+      ],
+    },
+  },
+  {
+    // audio Block A (SD-AU-04). Spreads SRC_RESTRICTED_PROPERTIES and
+    // ENV_RESTRICTION because flat config replaces rule options. Does not set
+    // no-restricted-imports, so the src/** TEST_DOM_IMPORTS ban still applies.
+    files: ['src/audio/**/*.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...AUDIO_BANNED_GLOBALS],
+      'no-restricted-properties': ['error', ...AUDIO_RESTRICTED_PROPERTIES],
+      'no-restricted-syntax': ['error', ENV_RESTRICTION, AUDIO_IMPORT_EXPRESSION_BAN],
+      'no-console': 'error',
+    },
+  },
+  {
+    // audio Block B: context.ts may read globalThis.AudioContext and nothing else.
+    files: ['src/audio/context.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...AUDIO_CONTEXT_BANNED_GLOBALS],
+      'no-restricted-syntax': [
+        'error',
+        ENV_RESTRICTION,
+        AUDIO_IMPORT_EXPRESSION_BAN,
+        {
+          selector: "MemberExpression[object.name='globalThis'][property.name!='AudioContext']",
+          message: 'context.ts may read only globalThis.AudioContext (SD-AU-04).',
+        },
       ],
     },
   },

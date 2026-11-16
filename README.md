@@ -1,6 +1,6 @@
 # StrikeZone
 
-Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene), the **hosting-infra** unit (one CDK v2 stack that serves the bundle from a private S3 bucket through CloudFront; see [infra/README.md](infra/README.md)), the **map-data** unit (`src/maps`), the **collision-nav** unit (`src/physics`, `src/nav`) and the **hud** unit (`src/ui/hud`).
+Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene), the **hosting-infra** unit (one CDK v2 stack that serves the bundle from a private S3 bucket through CloudFront; see [infra/README.md](infra/README.md)), the **map-data** unit (`src/maps`), the **collision-nav** unit (`src/physics`, `src/nav`), the **hud** unit (`src/ui/hud`) and the **audio** unit (`src/audio`).
 
 ## Requirements
 
@@ -49,6 +49,15 @@ Controls cannot be rebound. Crouch is C only; Ctrl is not bound. `tests/ui/scree
 - `src/ui/screens` holds the menu and overlay screens (S0–S14). Each implements `Screen<VM>` and only emits `UiIntent` or `SettingsIntent`. `src/ui/components` holds the DOM helper (change-only writes with a counter), the listener scope and the shared controls. Tokens live only in `src/ui/tokens.css`.
 - Saved data is tied to the page origin. Redeploying the same stack keeps it; `cdk destroy` plus a fresh deploy, or a new domain, loses it.
 - DOM tests use happy-dom with a `// @vitest-environment happy-dom` first line. The global Vitest environment stays `node`.
+
+## Audio
+
+- `src/audio` synthesises every sound with Web Audio oscillators and one seeded noise buffer. No audio file ships or loads.
+- `createAudioEngine({ diagnostics })` never creates an `AudioContext`. app-shell calls `unlock()` from the first `pointerdown` or `keydown` (and again on the Ready gate, Resume and Play Again). The call is idempotent and returns a `Result` (`BLOCKED`, `UNSUPPORTED`).
+- Per stepped frame app-shell calls `audio.play(events, { pos, yaw })` inside the `'audio'` profiler section, and `audio.ui(cueForIntent(intent))` after dispatching an intent. `setVolumes(masterPct, sfxPct)` takes the integer percents from Settings. `suspend()` runs on `visibilitychange` hidden, never on Pause.
+- Every voice goes through effects bus → master bus → limiter → destination. Either volume at 0 creates no nodes. At most 24 live voices and 12 new voices per frame; extra requests are dropped and counted as `audio/voice-dropped`.
+- Only `src/audio/context.ts` reads a browser global, and only `src/app/features.ts` may import `src/audio` (ESLint blocks plus `tests/arch`). To cut audio, remove that import, delete `src/audio`, delete the `app-shell → audio` row and hide the Audio settings group.
+- Audible output is checked by a manual listening script, which stays manual-pending until someone runs it in a browser.
 
 ## Verify gate
 

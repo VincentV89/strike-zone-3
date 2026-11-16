@@ -7,7 +7,7 @@ export default defineConfig({
     pool: 'forks',
     maxWorkers: 2, // 2-vCPU runtime (BR-F-43)
     execArgv: ['--expose-gc'], // allocation probes in tests/core and tests/bench
-    // The first typed ESLint probe in tests/arch builds the whole TS program; under v8
+    // The first typed ESLint probe per lint test file builds the whole TS program; under v8
     // coverage on 2 vCPU that takes ~32 s once src/physics and src/nav exist.
     testTimeout: 60_000,
     typecheck: {
@@ -32,6 +32,7 @@ export default defineConfig({
         'src/persistence/**': { lines: 80 },
         'src/ui/screens/**': { lines: 80 },
         'src/ui/components/**': { lines: 80 },
+        'src/audio/**': { lines: 80 }, // BR-AU-92
       },
     },
   },
