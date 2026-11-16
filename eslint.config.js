@@ -42,6 +42,96 @@ const ENV_RESTRICTION = {
   message: 'Only import.meta.env.MODE, DEV and PROD may be read in src/ (SD-F-09).',
 };
 
+/** DOM test libraries never ship (SD-H-06). */
+const TEST_DOM_IMPORTS = {
+  group: ['happy-dom', 'happy-dom/*', 'jsdom', 'jsdom/*'],
+  message: 'DOM test libraries are for tests only (SD-H-06).',
+};
+
+/** Styling and handler attributes in src/ui (SD-H-02). Use CSSOM or classList. */
+const UI_SYNTAX = [
+  ENV_RESTRICTION,
+  {
+    selector:
+      "CallExpression[callee.property.name='setAttribute'][arguments.0.value=/^(style|on)/i]",
+    message: 'Use CSSOM or classList, not style or on* attributes (SD-H-02).',
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='setAttributeNS'][arguments.1.value=/^(style|on)/i]",
+    message: 'Use CSSOM or classList, not style or on* attributes (SD-H-02).',
+  },
+  {
+    selector: "CallExpression[callee.property.name='setAttribute'][arguments.0.type!='Literal']",
+    message: 'Attribute names must be string literals (SD-H-02).',
+  },
+  {
+    selector: "CallExpression[callee.property.name='setAttributeNS'][arguments.1.type!='Literal']",
+    message: 'Attribute names must be string literals (SD-H-02).',
+  },
+];
+
+/** Extra syntax bans for the HUD (SD-H-02): no URL attributes, no style text. */
+const HUD_SYNTAX = [
+  ...UI_SYNTAX,
+  {
+    selector:
+      "CallExpression[callee.property.name='setAttribute'][arguments.0.value=/^((xlink:)?href|src)$/]",
+    message: 'The HUD sets no URL-bearing attributes (SD-H-02).',
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='setAttributeNS'][arguments.1.value=/^((xlink:)?href|src)$/]",
+    message: 'The HUD sets no URL-bearing attributes (SD-H-02).',
+  },
+  {
+    selector: "AssignmentExpression[left.property.name='cssText']",
+    message: 'cssText bypasses the node cache and is a style-text sink (SD-H-02).',
+  },
+];
+
+/** Capabilities the HUD has no reason to use (SD-H-03). */
+const HUD_BANNED_NAMES = [
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'EventSource',
+  'localStorage',
+  'sessionStorage',
+  'indexedDB',
+  'setTimeout',
+  'setInterval',
+  'requestAnimationFrame',
+  'requestIdleCallback',
+  'queueMicrotask',
+  'open',
+  'postMessage',
+  'getComputedStyle',
+];
+const HUD_BANNED_GLOBALS = HUD_BANNED_NAMES.map((name) => ({
+  name,
+  message: `The HUD must not use ${name} (SD-H-03).`,
+}));
+const HUD_RESTRICTED_PROPERTIES = [
+  ...HUD_BANNED_NAMES.map((property) => ({
+    object: 'window',
+    property,
+    message: `The HUD must not use window.${property} (SD-H-03).`,
+  })),
+  { object: 'navigator', property: 'sendBeacon', message: 'The HUD sends nothing (SD-H-03).' },
+  ...[
+    'addEventListener',
+    'offsetWidth',
+    'offsetHeight',
+    'clientWidth',
+    'clientHeight',
+    'getBoundingClientRect',
+  ].map((property) => ({
+    property,
+    message: `The HUD registers no listeners and reads no layout: ${property} (SD-H-03).`,
+  })),
+];
+
 const SIM_BANNED_GLOBALS = [
   'window',
   'document',
@@ -55,14 +145,7 @@ const SIM_BANNED_GLOBALS = [
   'Date',
 ].map((name) => ({ name, message: `Simulation-ring code must not read ${name} (BR-F-01).` }));
 
-/** Test DOM libraries may never be imported from src/ (SD-H-06, SEC-MS-10). */
-const TEST_DOM_IMPORTS = {
-  group: ['happy-dom', 'happy-dom/*', 'jsdom', 'jsdom/*'],
-  message: 'Test DOM libraries are dev-only and must not be imported from src/ (SEC-MS-10).',
-};
-
-// Attribute bans for all of src/ui (SD-H-02, SEC-MS-02). Same names and
-// selectors as the hud lane so the merge resolves to one definition.
+// Attribute selectors reused by the dom.ts block below (SD-H-02, SEC-MS-02).
 const SET_ATTRIBUTE_STYLE_OR_ON = {
   selector: "CallExpression[callee.property.name='setAttribute'][arguments.0.value=/^(style|on)/i]",
   message: 'Inline style and on* attributes break the CSP (SD-H-02).',
@@ -72,21 +155,6 @@ const SET_ATTRIBUTE_NS_STYLE_OR_ON = {
     "CallExpression[callee.property.name='setAttributeNS'][arguments.1.value=/^(style|on)/i]",
   message: 'Inline style and on* attributes break the CSP (SD-H-02).',
 };
-const SET_ATTRIBUTE_COMPUTED = {
-  selector: "CallExpression[callee.property.name='setAttribute'][arguments.0.type!='Literal']",
-  message: 'Attribute names must be literals so the style/on* ban can see them (SD-H-02).',
-};
-const SET_ATTRIBUTE_NS_COMPUTED = {
-  selector: "CallExpression[callee.property.name='setAttributeNS'][arguments.1.type!='Literal']",
-  message: 'Attribute names must be literals so the style/on* ban can see them (SD-H-02).',
-};
-const UI_SYNTAX = [
-  ENV_RESTRICTION,
-  SET_ATTRIBUTE_STYLE_OR_ON,
-  SET_ATTRIBUTE_NS_STYLE_OR_ON,
-  SET_ATTRIBUTE_COMPUTED,
-  SET_ATTRIBUTE_NS_COMPUTED,
-];
 
 // menus-settings unit paths (security-design-menus-settings SD-MS-03, SD-MS-06).
 const MENUS_FILES = [
@@ -137,6 +205,20 @@ const ADD_EVENT_LISTENER_BAN = {
   message: 'Register listeners through scope.on from src/ui/components/scope.ts (PD-MS-03).',
 };
 
+/** Extra bans for map data: maps are compiled-in data, never loaded at runtime (SEC-M-01). */
+const MAPS_BANNED_GLOBALS = [
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'EventSource',
+  'indexedDB',
+  'caches',
+  'structuredClone',
+  'globalThis',
+  'self',
+  'importScripts',
+].map((name) => ({ name, message: `Map data must not use ${name} (SEC-M-01).` }));
+
 export default tseslint.config(
   {
     ignores: [
@@ -160,7 +242,9 @@ export default tseslint.config(
           allowDefaultProject: [
             'src/core/__probe__.ts',
             'src/app/__probe__.ts',
+            'src/maps/__probe__.ts',
             'src/ui/__probe__.ts',
+            'src/ui/hud/__probe__.ts',
             'src/ui/screens/__probe__.ts',
             'src/ui/components/__probe__.ts',
             'src/persistence/__probe__.ts',
@@ -179,7 +263,7 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    files: ['scripts/**/*.ts', 'tests/**/*.ts', '*.config.ts'],
+    files: ['scripts/**/*.ts', 'tests/**/*.ts', 'infra/**/*.ts', '*.config.ts'],
     languageOptions: { globals: { ...globals.node } },
   },
   {
@@ -221,9 +305,45 @@ export default tseslint.config(
     },
   },
   {
+    // Later blocks replace a rule's options, so every list from the src/** and
+    // sim-ring blocks is spread in before the map-specific bans (SD-M-01).
+    files: ['src/maps/**/*.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...SIM_BANNED_GLOBALS, ...MAPS_BANNED_GLOBALS],
+      'no-restricted-properties': [
+        'error',
+        ...SIM_RESTRICTED_PROPERTIES,
+        {
+          object: 'JSON',
+          property: 'parse',
+          message: 'Maps are TypeScript data, not JSON (SEC-M-01).',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        ENV_RESTRICTION,
+        { selector: 'ImportExpression', message: 'No dynamic import() in src/maps (SEC-M-01).' },
+      ],
+    },
+  },
+  {
+    // Flat config replaces rule options instead of merging them, so every
+    // narrower block spreads the src/** lists it would otherwise drop.
     // All UI code: attribute bans on top of the foundation env restriction.
     files: ['src/ui/**/*.ts'],
     rules: { 'no-restricted-syntax': ['error', ...UI_SYNTAX] },
+  },
+  {
+    files: ['src/ui/hud/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...HUD_SYNTAX],
+      'no-restricted-globals': ['error', ...HUD_BANNED_GLOBALS],
+      'no-restricted-properties': [
+        'error',
+        ...SRC_RESTRICTED_PROPERTIES,
+        ...HUD_RESTRICTED_PROPERTIES,
+      ],
+    },
   },
   {
     // menus-settings: network, storage, timer and listener bans. Spreads the
