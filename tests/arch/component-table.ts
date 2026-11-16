@@ -101,7 +101,8 @@ export const COMPONENTS: readonly ComponentSpec[] = [
     prefixes: ['src/sim'],
     deps: {
       [core]: 'R',
-      [contracts]: 'T',
+      // R so createSimulation can check cfg.bots against BOT_COUNTS (NFR-GS-Q1 = A).
+      [contracts]: 'R',
       'map-data': 'R',
       'collision-world': 'R',
       navigation: 'R',

@@ -394,6 +394,8 @@ export default tseslint.config(
             'src/ai/perception/__probe__.ts',
             'src/ai/locomotion/__probe__.ts',
             'src/ai/brain/__probe__.ts',
+            'src/sim/__probe__.ts',
+            'src/sim/stats/__probe__.ts',
           ],
           // The bot-ai probes make one ring-lint process open more than the default 8
           // default-project files (BR-AI-91, SD-AI-05).

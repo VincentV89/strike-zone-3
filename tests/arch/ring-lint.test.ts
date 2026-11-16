@@ -146,6 +146,9 @@ describe('sim-ring network and global bans in physics and nav (SD-CN-01, SD-CN-0
     'src/ai/perception/__probe__.ts',
     'src/ai/locomotion/__probe__.ts',
     'src/ai/brain/__probe__.ts',
+    // game-simulation and match-stats probes (TS-GS-09, SD-GS-08)
+    'src/sim/__probe__.ts',
+    'src/sim/stats/__probe__.ts',
   ]) {
     it.each(cases)(`rejects %j in ${probe} with exactly one %s error`, async (code, rule) => {
       const ids = await ruleIds(code, probe);
