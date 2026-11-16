@@ -6,7 +6,8 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     target: 'es2022',
-    // three.js alone is about 530 kB minified; code splitting is a later presentation-3d concern.
+    // three.js stays in the single entry chunk (ID-P-03, deployment-architecture-presentation-3d):
+    // hashed assets are cached immutable, so a vendor split buys little. The limit is a size guard.
     chunkSizeWarningLimit: 800,
   },
 });
