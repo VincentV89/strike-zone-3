@@ -135,7 +135,14 @@ describe('sim-ring network and global bans in physics and nav (SD-CN-01, SD-CN-0
     ["import { Scene } from 'three';\nexport const s = new Scene();\n", 'no-restricted-imports'],
   ];
 
-  for (const probe of ['src/physics/__probe__.ts', 'src/nav/__probe__.ts']) {
+  // player-combat probes reuse this loop and its typed program (SD-PC-02).
+  for (const probe of [
+    'src/physics/__probe__.ts',
+    'src/nav/__probe__.ts',
+    'src/sim/player/__probe__.ts',
+    'src/weapons/__probe__.ts',
+    'src/combat/__probe__.ts',
+  ]) {
     it.each(cases)(`rejects %j in ${probe} with exactly one %s error`, async (code, rule) => {
       const ids = await ruleIds(code, probe);
       expect(ids.filter((id) => id === rule)).toHaveLength(1);

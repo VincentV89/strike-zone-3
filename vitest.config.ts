@@ -34,6 +34,9 @@ export default defineConfig({
         'src/persistence/**': { lines: 80 },
         'src/ui/screens/**': { lines: 80 },
         'src/ui/components/**': { lines: 80 },
+        'src/sim/player/**': { lines: 80 }, // TS-PC-09
+        'src/weapons/**': { lines: 80 }, // TS-PC-09
+        'src/combat/**': { lines: 80 }, // TS-PC-09
         'src/audio/**': { lines: 80 }, // BR-AU-92
       },
     },
