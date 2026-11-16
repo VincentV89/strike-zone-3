@@ -9,7 +9,9 @@ export type UiIntent =
   | { type: 'restart-confirmed' }
   | { type: 'leave-confirmed' }
   | { type: 'play-again' }
-  | { type: 'main-menu' };
+  | { type: 'main-menu' }
+  /** Added by menus-settings with S14 match history (FD-MS-08, additive). */
+  | { type: 'clear-history' };
 
 export interface Settings {
   sensitivity: number;

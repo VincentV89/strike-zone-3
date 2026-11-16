@@ -155,8 +155,10 @@ export const COMPONENTS: readonly ComponentSpec[] = [
   {
     id: 'menus-ui',
     ring: 'adapter',
-    prefixes: ['src/ui/screens'],
-    deps: { [contracts]: 'T', settings: 'T' },
+    // FD-MS-07 / TS-MS-03: components and the shared token sheet belong to menus-ui.
+    prefixes: ['src/ui/screens', 'src/ui/components', 'src/ui/tokens.css'],
+    // R edges: SETTINGS_SPEC (FD-MS-07) and BOT_COUNTS (SD-MS-05) are runtime values.
+    deps: { [contracts]: 'R', settings: 'R' },
   },
   {
     id: 'audio',
@@ -170,7 +172,8 @@ export const COMPONENTS: readonly ComponentSpec[] = [
     prefixes: ['src/settings'],
     deps: { [contracts]: 'T', persistence: 'T' },
   },
-  { id: 'persistence', ring: 'adapter', prefixes: ['src/persistence'], deps: { [contracts]: 'T' } },
+  // persistence -> contracts is R: history validation reads BOT_COUNTS (SD-MS-05).
+  { id: 'persistence', ring: 'adapter', prefixes: ['src/persistence'], deps: { [contracts]: 'R' } },
   {
     id: 'test-seams',
     ring: 'adapter',

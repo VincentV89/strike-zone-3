@@ -28,6 +28,10 @@ export default defineConfig({
         'src/ui/hud/**': { lines: 80 },
         'src/physics/**': { lines: 80 }, // BR-CN-97
         'src/nav/**': { lines: 80 }, // BR-CN-97
+        'src/settings/**': { lines: 80 },
+        'src/persistence/**': { lines: 80 },
+        'src/ui/screens/**': { lines: 80 },
+        'src/ui/components/**': { lines: 80 },
       },
     },
   },
