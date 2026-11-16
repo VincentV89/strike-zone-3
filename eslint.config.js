@@ -55,6 +55,20 @@ const SIM_BANNED_GLOBALS = [
   'Date',
 ].map((name) => ({ name, message: `Simulation-ring code must not read ${name} (BR-F-01).` }));
 
+/** Extra bans for map data: maps are compiled-in data, never loaded at runtime (SEC-M-01). */
+const MAPS_BANNED_GLOBALS = [
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'EventSource',
+  'indexedDB',
+  'caches',
+  'structuredClone',
+  'globalThis',
+  'self',
+  'importScripts',
+].map((name) => ({ name, message: `Map data must not use ${name} (SEC-M-01).` }));
+
 export default tseslint.config(
   {
     ignores: [
@@ -75,7 +89,11 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['src/core/__probe__.ts', 'src/app/__probe__.ts'],
+          allowDefaultProject: [
+            'src/core/__probe__.ts',
+            'src/app/__probe__.ts',
+            'src/maps/__probe__.ts',
+          ],
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -127,6 +145,28 @@ export default tseslint.config(
       ],
       'no-restricted-globals': ['error', ...SIM_BANNED_GLOBALS],
       'no-restricted-properties': ['error', ...SIM_RESTRICTED_PROPERTIES],
+    },
+  },
+  {
+    // Later blocks replace a rule's options, so every list from the src/** and
+    // sim-ring blocks is spread in before the map-specific bans (SD-M-01).
+    files: ['src/maps/**/*.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...SIM_BANNED_GLOBALS, ...MAPS_BANNED_GLOBALS],
+      'no-restricted-properties': [
+        'error',
+        ...SIM_RESTRICTED_PROPERTIES,
+        {
+          object: 'JSON',
+          property: 'parse',
+          message: 'Maps are TypeScript data, not JSON (SEC-M-01).',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        ENV_RESTRICTION,
+        { selector: 'ImportExpression', message: 'No dynamic import() in src/maps (SEC-M-01).' },
+      ],
     },
   },
   prettier,

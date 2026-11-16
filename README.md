@@ -1,6 +1,6 @@
 # StrikeZone
 
-Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit: the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene.
+Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, Vite and three.js and hosted as a static bundle. This repository currently contains the **foundation** unit (the shared kernel, the shared contract types, the toolchain and the `npm run verify` gate, plus a walking-skeleton page that renders a lit three.js scene) and the **map-data** unit (`src/maps`).
 
 ## Requirements
 
@@ -15,7 +15,7 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 | `npm run lint`           | `eslint . --max-warnings 0 && prettier --check .`                                                |
 | `npm run typecheck`      | `tsc --noEmit` (strict, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`)                      |
 | `npm test`               | Vitest (Node environment, at most 2 workers)                                                     |
-| `npm run test:coverage`  | Vitest with v8 coverage; fails below 80 % lines on `src/core/**`                                 |
+| `npm run test:coverage`  | Vitest with v8 coverage; fails below 80 % lines on `src/core/**` or `src/maps/**`                |
 | `npm run check:imports`  | The import-graph and ring-lint tests on their own (`tests/arch`)                                 |
 | `npm run build`          | `vite build` into `dist/`                                                                        |
 | `npm run check:licences` | Licence, pinning, asset, secret and `dist/` checks; writes `reports/licences.json`               |
@@ -35,6 +35,7 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 | delivery   | `infra/`, `scripts/`, `test/`                                                                                       | Node-only tooling                                                                             |
 
 - `src/core` is the kernel: seeded RNG streams (`createRng`, sfc32), the 60 Hz fixed-step clock, the bounded event buffer, the frame profiler, the Diagnostics port, Vec3/AABB math and `StrikeZoneError`/`Result`.
+- `src/maps` is map-data: the Desert Compound and Industrial Warehouse maps as deep-frozen TypeScript data, plus `checkMapData` (pure data rules) and the map-content checklist. Other code imports `src/maps/index.ts` only; map files, builders and helpers are private. Maps load nothing at runtime, and the `src/maps/**` ESLint block bans `fetch`, `JSON.parse`, `globalThis` and dynamic `import()` on top of the sim-ring rules.
 - `src/contracts` holds only types (and the `BOT_COUNTS` table) shared between components. Changes are additive only.
 - Imports between components use relative paths. There are no path aliases.
 - `tests/arch/component-table.ts` declares every component, its ring and its allowed edges (R = runtime, T = type-only). `tests/arch/import-graph.test.ts` fails on undeclared edges, type-only edges used at runtime, ring violations, runtime code in contracts, bot AI importing the sim world, and cycles (type-only edges included). A unit that adds an edge updates the table.
