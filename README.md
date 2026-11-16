@@ -22,6 +22,32 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 | `npm run audit`          | Advisory `npm audit` of production dependencies into `reports/audit.json` (not part of the gate) |
 | `npm run verify`         | The gate: `lint && typecheck && test:coverage && build && check:licences`, failing fast          |
 
+## Controls
+
+Controls cannot be rebound. Crouch is C only; Ctrl is not bound. `tests/ui/screens/controls-readme.test.ts` checks that this table equals `CONTROL_BINDINGS` in `src/ui/screens/controls-content.ts`.
+
+| Action        | Keys                     |
+| ------------- | ------------------------ |
+| Move          | W A S D                  |
+| Look          | Mouse                    |
+| Fire          | Left mouse button        |
+| Sniper scope  | Hold right mouse button  |
+| Jump          | Space                    |
+| Sprint        | Shift                    |
+| Crouch        | C                        |
+| Reload        | R                        |
+| Switch weapon | 1 / 2 / 3 or mouse wheel |
+| Scoreboard    | Hold Tab                 |
+| Pause         | Esc                      |
+
+## Menus, settings and saved data
+
+- `src/settings` holds `SETTINGS_SPEC`, the single table of setting ranges and defaults, `normalise` (clamp, snap, reject), `validateSettings` and the settings store.
+- `src/persistence` reads and writes `strikezone:settings` and `strikezone:history` in localStorage as `{ schemaVersion: 1, ... }`. Reads never throw: bad records fall back to defaults, and a failed write stops saving for the rest of the tab session. Only app-shell touches `window.localStorage` and passes it in, together with `validateSettings`.
+- `src/ui/screens` holds the menu and overlay screens (S0–S14). Each implements `Screen<VM>` and only emits `UiIntent` or `SettingsIntent`. `src/ui/components` holds the DOM helper (change-only writes with a counter), the listener scope and the shared controls. Tokens live only in `src/ui/tokens.css`.
+- Saved data is tied to the page origin. Redeploying the same stack keeps it; `cdk destroy` plus a fresh deploy, or a new domain, loses it.
+- DOM tests use happy-dom with a `// @vitest-environment happy-dom` first line. The global Vitest environment stays `node`.
+
 ## Verify gate
 
 `npm run verify` runs offline after `npm ci`, needs no credentials and makes no AWS calls. Steps are only ever **appended**: hosting-infra adds `SZ_SKIP_WEB_BUILD=1 cdk synth` after `build`, and app-shell appends `check:seams`. `tests/scripts/verify-script.test.ts` fails if the chain uses anything but `&&` or reorders the foundation steps.

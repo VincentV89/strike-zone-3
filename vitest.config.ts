@@ -22,6 +22,10 @@ export default defineConfig({
       thresholds: {
         // Per-glob floors; later units add their own globs at the same floor (BR-F-44).
         'src/core/**': { lines: 80 },
+        'src/settings/**': { lines: 80 },
+        'src/persistence/**': { lines: 80 },
+        'src/ui/screens/**': { lines: 80 },
+        'src/ui/components/**': { lines: 80 },
       },
     },
   },
