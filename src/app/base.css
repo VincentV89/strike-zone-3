@@ -1,0 +1,55 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #0e1116;
+  color: #e8ecf1;
+  font-family: system-ui, sans-serif;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+#app canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.boot-notice {
+  margin: 2rem;
+}
+
+/* app-shell layers (frontend-components-app-shell §1): canvas, HUD, one base screen. */
+#app > .app-hud,
+#app > .app-screens {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#app > .app-screens > * {
+  pointer-events: auto;
+}
+
+#app > [hidden] {
+  display: none;
+}
+
+/* Dev profiler overlay; only the --mode test bundle mounts it. */
+.dev-overlay {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  background: rgb(14 17 22 / 88%);
+  color: #e8ecf1;
+  font:
+    12px ui-monospace,
+    monospace;
+  pointer-events: none;
+}

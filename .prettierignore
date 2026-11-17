@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-test/
+cdk.out/
+coverage/
+reports/
+.kiro-data/
+.aidlc/
+.kiro/
+package-lock.json
