@@ -42,7 +42,7 @@ const WALK_EXCLUDED_DIRS = new Set([
 ]);
 const SECRET_IGNORED_DIRS = new Set(['.aws']);
 const ASSET_EXTENSIONS = new Set(
-  'png jpg jpeg gif webp bmp ktx2 basis hdr exr glb gltf fbx obj dae wav mp3 ogg flac m4a ttf otf woff woff2'.split(
+  'png jpg jpeg gif webp bmp ktx2 basis hdr exr glb gltf fbx obj dae wav mp3 ogg flac m4a ttf otf woff woff2 wasm'.split(
     ' ',
   ),
 );
@@ -369,25 +369,55 @@ function readProvenance(root: string, report: Report): Map<string, boolean> | nu
   const attested = new Map<string, boolean>();
   for (const e of data) {
     if (!isRecord(e) || typeof e['path'] !== 'string') continue;
-    const origin = e['origin'];
-    const author = e['author'];
-    const valid =
-      (origin === 'original' || origin === 'procedural') &&
-      typeof author === 'string' &&
-      author.trim() !== '';
-    attested.set(toPosix(e['path']), valid);
+    attested.set(toPosix(e['path']), provenanceEntryValid(e));
   }
   return attested;
+}
+
+/** CC0 sources must come from these hosts, matched on the parsed hostname (SR-G-20). */
+export const CC0_HOSTS: readonly string[] = [
+  'polyhaven.com',
+  'ambientcg.com',
+  'kenney.nl',
+  'quaternius.com',
+];
+
+/**
+ * ProvenanceEntry v2 (BR-G-80, RULE CHANGE): `original` or `procedural` with an author, or
+ * `cc0` with licence CC0-1.0, an author and an https source on an allow-listed host.
+ */
+export function provenanceEntryValid(e: Record<string, unknown>): boolean {
+  const origin = e['origin'];
+  const author = e['author'];
+  if (typeof author !== 'string' || author.trim() === '') return false;
+  if (origin === 'original' || origin === 'procedural') return true;
+  if (origin !== 'cc0' || e['licence'] !== 'CC0-1.0' || typeof e['source'] !== 'string')
+    return false;
+  let url: URL;
+  try {
+    url = new URL(e['source']);
+  } catch {
+    return false;
+  }
+  const host = url.hostname.replace(/^www\./, '');
+  return url.protocol === 'https:' && CC0_HOSTS.includes(host);
 }
 
 function phaseAssets(root: string, report: Report): void {
   const attested = readProvenance(root, report) ?? new Map<string, boolean>();
   const files = walk(root, root, { skipSecretIgnored: false }, []);
+  const seen = new Set<string>();
   for (const file of files) {
     if (!ASSET_EXTENSIONS.has(extensionOf(file))) continue;
+    seen.add(file);
     const ok = attested.get(file) === true;
     report.assets.push({ path: file, attested: ok });
     if (!ok) report.failures.push({ phase: 2, rule: 'asset-unattested', detail: file });
+  }
+  // Parity (SR-G-20): an entry whose file is gone is stale.
+  for (const path of attested.keys()) {
+    if (!seen.has(path))
+      report.failures.push({ phase: 2, rule: 'provenance-orphan', detail: path });
   }
 }
 

@@ -6,11 +6,16 @@
  *
  * Graphics uplift (RA-G3, NFR-G-Q2 = A): `'wasm-unsafe-eval'` in script-src for
  * the meshopt and Basis WASM decoders, and `worker-src 'self' blob:` for the
- * KTX2 transcoder worker. `img-src blob:` was approved but is unused (no image
+ * KTX2 transcoder worker.
+ *
+ * [RULE CHANGE] CG-G-Q1 = A (requester, 2026-11-20): `'unsafe-eval'` in script-src.
+ * three 0.187's basis_transcoder.js is an Emscripten embind build that creates its
+ * invokers with `new Function` inside the transcoder worker, which 'wasm-unsafe-eval'
+ * does not cover. Without it every KTX2 texture fails. Disclosed in docs/FINAL-REPORT.md. `img-src blob:` was approved but is unused (no image
  * is ever loaded from a URL), so it is left out. `connect-src` stays 'self'.
  */
 export const CSP =
-  "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; " +
+  "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self'; " +
   "img-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; " +
   "base-uri 'none'; frame-ancestors 'none'; form-action 'none'";
 

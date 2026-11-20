@@ -58,7 +58,12 @@ export interface LibraryDeps {
 }
 
 export interface AssetLibrary extends AssetLookup {
-  request(e: AssetEntry, signal: AbortSignal, runtime: AssetRuntime, map: MapId): Promise<EntryOutcome>;
+  request(
+    e: AssetEntry,
+    signal: AbortSignal,
+    runtime: AssetRuntime,
+    map: MapId,
+  ): Promise<EntryOutcome>;
   state(key: AssetKey): LibraryState;
   received(key: AssetKey): number;
   /** Keys that ended `failed` (BR-G-11 assetFallbacks). */
@@ -76,14 +81,18 @@ export function isAbortError(err: unknown): boolean {
 
 /** Maps any error to the closed code union (SR-G-11): never reads the message. */
 export function codeFor(err: unknown, fallback: AssetFailureCode): AssetFailureCode {
-  const code = typeof err === 'object' && err !== null ? (err as { code?: unknown }).code : undefined;
-  return typeof code === 'string' && FAILURE_CODES.has(code) ? (code as AssetFailureCode) : fallback;
+  const code =
+    typeof err === 'object' && err !== null ? (err as { code?: unknown }).code : undefined;
+  return typeof code === 'string' && FAILURE_CODES.has(code)
+    ? (code as AssetFailureCode)
+    : fallback;
 }
 
 /** A function, so checks after an await are not narrowed away. */
 const aborted = (signal: AbortSignal): boolean => signal.aborted;
 
-const forMap = (maps: AssetEntry['maps'], map: MapId): boolean => maps === 'all' || maps.includes(map);
+const forMap = (maps: AssetEntry['maps'], map: MapId): boolean =>
+  maps === 'all' || maps.includes(map);
 
 export function createAssetLibrary(deps: LibraryDeps): AssetLibrary {
   const entries = new Map<AssetKey, LibraryEntry>();
@@ -131,7 +140,9 @@ export function createAssetLibrary(deps: LibraryDeps): AssetLibrary {
     let total = keptBytes();
     if (total + add <= reserve.totalBytes) return mapBytes(map) + add <= reserve.mapBytes;
     const others = [...entries.entries()]
-      .filter(([, le]) => le.state === 'ready' && le.value?.kind === 'texture' && !forMap(le.maps, map))
+      .filter(
+        ([, le]) => le.state === 'ready' && le.value?.kind === 'texture' && !forMap(le.maps, map),
+      )
       .sort((a, b) => a[1].lastUsed - b[1].lastUsed);
     for (const [, le] of others) {
       if (total + add <= reserve.totalBytes) break;
@@ -145,12 +156,17 @@ export function createAssetLibrary(deps: LibraryDeps): AssetLibrary {
   function mapBytes(map: MapId): number {
     let n = 0;
     for (const le of entries.values()) {
-      if (le.state === 'ready' && le.value?.kind === 'texture' && forMap(le.maps, map)) n += le.value.bytes;
+      if (le.state === 'ready' && le.value?.kind === 'texture' && forMap(le.maps, map))
+        n += le.value.bytes;
     }
     return n;
   }
 
-  async function decode(e: AssetEntry, bytes: Uint8Array, runtime: AssetRuntime): Promise<ParsedAsset> {
+  async function decode(
+    e: AssetEntry,
+    bytes: Uint8Array,
+    runtime: AssetRuntime,
+  ): Promise<ParsedAsset> {
     if (e.kind !== 'model') return runtime.parse(e, bytes);
     // Single GLB decode slot; yields so the loading bar can repaint (performance-design §2).
     const run = decodeSlot.then(async () => {

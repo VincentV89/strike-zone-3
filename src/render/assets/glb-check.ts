@@ -29,7 +29,9 @@ function invalid(): CodedError {
 }
 
 const own = (o: unknown, k: string): unknown =>
-  typeof o === 'object' && o !== null && Object.hasOwn(o, k) ? (o as Record<string, unknown>)[k] : undefined;
+  typeof o === 'object' && o !== null && Object.hasOwn(o, k)
+    ? (o as Record<string, unknown>)[k]
+    : undefined;
 
 const arr = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : []);
 
@@ -58,14 +60,20 @@ export function checkGlb(bytes: Uint8Array): void {
 /** V2 schema rules over the parsed JSON chunk. */
 export function checkGltfJson(json: unknown, binLen: number): void {
   if (typeof json !== 'object' || json === null || Array.isArray(json)) throw invalid();
-  for (const k of ['images', 'textures', 'samplers']) if (arr(own(json, k)).length > 0) throw invalid();
+  for (const k of ['images', 'textures', 'samplers'])
+    if (arr(own(json, k)).length > 0) throw invalid();
+  // Buffer 0 is the BIN chunk. EXT_meshopt_compression adds data-less fallback buffers.
   const buffers = arr(own(json, 'buffers'));
-  if (buffers.length !== 1) throw invalid();
-  for (const b of buffers) {
+  if (buffers.length < 1 || buffers.length > 8) throw invalid();
+  buffers.forEach((b, i) => {
     if (own(b, 'uri') !== undefined) throw invalid();
     const len = own(b, 'byteLength');
-    if (typeof len !== 'number' || len > binLen) throw invalid();
-  }
+    if (typeof len !== 'number' || len < 0) throw invalid();
+    if (i === 0 && len > binLen) throw invalid();
+    if (i > 0 && own(own(own(b, 'extensions'), 'EXT_meshopt_compression'), 'fallback') !== true) {
+      throw invalid();
+    }
+  });
   for (const e of arr(own(json, 'extensionsRequired'))) {
     if (typeof e !== 'string' || !ALLOWED_REQUIRED.has(e)) throw invalid();
   }
@@ -75,12 +83,15 @@ export function checkGltfJson(json: unknown, binLen: number): void {
   if (channels > MAX_ANIMATION_CHANNELS) throw invalid();
   const views = arr(own(json, 'bufferViews'));
   for (const v of views) {
-    const off = own(v, 'byteOffset') ?? 0;
-    const len = own(v, 'byteLength');
-    if (typeof off !== 'number' || typeof len !== 'number' || off < 0 || len < 0) throw invalid();
-    // meshopt-compressed views name a fallback buffer range; the real data is in the extension.
     const ext = own(own(v, 'extensions'), 'EXT_meshopt_compression');
-    if (ext === undefined && off + len > binLen) throw invalid();
+    // Compressed views read their bytes from the extension's range of buffer 0.
+    const src = ext ?? v;
+    const buf = own(src, 'buffer') ?? 0;
+    const off = own(src, 'byteOffset') ?? 0;
+    const len = own(src, 'byteLength');
+    if (typeof off !== 'number' || typeof len !== 'number' || off < 0 || len < 0) throw invalid();
+    if (buf === 0 && off + len > binLen) throw invalid();
+    if (ext === undefined && buf !== 0) throw invalid();
   }
   for (const a of arr(own(json, 'accessors'))) {
     const view = own(a, 'bufferView');

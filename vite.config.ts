@@ -9,5 +9,8 @@ export default defineConfig({
     // three.js stays in the single entry chunk (ID-P-03, deployment-architecture-presentation-3d):
     // hashed assets are cached immutable, so a vendor split buys little. The limit is a size guard.
     chunkSizeWarningLimit: 900, // B9 budget: 900 KB min, 200 KB brotli (check:seams)
+    // Asset binaries are always hashed files, never data: URIs (BR-G-05): connect-src is 'self'
+    // and the AssetPort fetches them. Small KTX2 mips would otherwise be inlined.
+    assetsInlineLimit: (file) => (/\.(glb|ktx2|wasm)$/i.test(file) ? false : undefined),
   },
 });

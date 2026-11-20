@@ -340,7 +340,11 @@ const RENDER_LOADER_SPECIFIER_BAN = {
   selector: 'ImportSpecifier[imported.name=/Loader$/]',
   message: 'Loaders are allowed only in src/render/assets/kit.ts (BR-G-03).',
 };
-const RENDER_SYNTAX_BASE = [...UI_SYNTAX, RENDER_IMPORT_EXPRESSION_BAN, RENDER_LOADER_SPECIFIER_BAN];
+const RENDER_SYNTAX_BASE = [
+  ...UI_SYNTAX,
+  RENDER_IMPORT_EXPRESSION_BAN,
+  RENDER_LOADER_SPECIFIER_BAN,
+];
 
 /** Lifted only for gl-host.ts (SEC-P-04). */
 const RENDER_HOST_ONLY = [
@@ -389,7 +393,8 @@ const KIT_IMPORTS = {
         'three/webgpu',
         'three/tsl',
       ],
-      message: 'The kit may import only GLTFLoader, KTX2Loader, meshopt_decoder and SkeletonUtils (BR-G-03).',
+      message:
+        'The kit may import only GLTFLoader, KTX2Loader, meshopt_decoder and SkeletonUtils (BR-G-03).',
     },
   ],
 };

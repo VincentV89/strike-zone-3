@@ -20,6 +20,7 @@
     "synth": "tsc -p tsconfig.infra.json && CDK_DISABLE_CLI_TELEMETRY=true SZ_SKIP_WEB_BUILD=1 cdk synth --quiet --strict --no-notices",
     "check:licences": "node scripts/check-licences.ts --require-dist",
     "check:seams": "node scripts/check-seams.ts",
+    "check:assets": "node scripts/check-assets.ts",
     "build:test": "vite build --mode test --outDir dist-test",
     "audit": "mkdir -p reports && npm audit --omit=dev --audit-level=high --json > reports/audit.json || true",
     "test:matrix": "vitest run tests/sim/rounds.test.ts -t \"bot-count matrix\"",
@@ -28,7 +29,7 @@
     "smoke": "node scripts/smoke.ts",
     "smoke:browser": "playwright test -c playwright.deployed.config.ts",
     "report": "node scripts/report.ts",
-    "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run synth && npm run check:licences && npm run check:seams"
+    "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run synth && npm run check:licences && npm run check:seams && npm run check:assets"
   },
   "dependencies": {
     "three": "0.187.0"

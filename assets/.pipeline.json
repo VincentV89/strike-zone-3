@@ -19,8 +19,8 @@
     },
     {
       "path": "assets/models/bot-soldier.glb",
-      "bytes": 591088,
-      "sha256": "913b38c9f55c479ad9de429bbf61f3b6f6901a647c5a724cd19e81ab69297b4e",
+      "bytes": 526200,
+      "sha256": "8cbd9c9506cffce6dafaa0d68d14f5f2a4276f9e979e25acbc1d6186191af11d",
       "origin": "cc0",
       "licence": "CC0-1.0",
       "author": "Quaternius",
@@ -99,8 +99,8 @@
     },
     {
       "path": "assets/sky/sky-desert-dusk.ktx2",
-      "bytes": 355450,
-      "sha256": "aa32cdd21ec9097bf52f8cbd15c4d81d6deb8fa9cea438e96d3461b434f6f30d",
+      "bytes": 356159,
+      "sha256": "6fe68fb2320c5ac076e90a19df48458a6ea9205938eced36d2b8d90f54736694",
       "origin": "cc0",
       "licence": "CC0-1.0",
       "author": "Poly Haven",
@@ -109,8 +109,8 @@
     },
     {
       "path": "assets/sky/sky-warehouse-storm.ktx2",
-      "bytes": 383130,
-      "sha256": "ec960f84ed82fd6d1acc532b075eefb82a2cfb0439f8840b8e0c40c6135e89cb",
+      "bytes": 383789,
+      "sha256": "8478fc0bd468471cef1f02f51a0b80df49f096e7abdc8c1f76712409a37e0043",
       "origin": "cc0",
       "licence": "CC0-1.0",
       "author": "Poly Haven",

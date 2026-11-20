@@ -6,17 +6,30 @@
  * offline from the source's SitDown end pose (the pack has no crouch clips).
  */
 import { readFileSync } from 'node:fs';
-import { getBounds, joinPrimitives, simplifyPrimitive } from '@gltf-transform/functions';
+import {
+  getBounds,
+  joinPrimitives,
+  simplifyPrimitive,
+  weldPrimitive,
+} from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
 import { orientWeapon } from './build.mjs';
 
 function invert(m) {
   const inv = new Array(16);
   const [a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33] = m;
-  const b00 = a00 * a11 - a01 * a10, b01 = a00 * a12 - a02 * a10, b02 = a00 * a13 - a03 * a10;
-  const b03 = a01 * a12 - a02 * a11, b04 = a01 * a13 - a03 * a11, b05 = a02 * a13 - a03 * a12;
-  const b06 = a20 * a31 - a21 * a30, b07 = a20 * a32 - a22 * a30, b08 = a20 * a33 - a23 * a30;
-  const b09 = a21 * a32 - a22 * a31, b10 = a21 * a33 - a23 * a31, b11 = a22 * a33 - a23 * a32;
+  const b00 = a00 * a11 - a01 * a10,
+    b01 = a00 * a12 - a02 * a10,
+    b02 = a00 * a13 - a03 * a10;
+  const b03 = a01 * a12 - a02 * a11,
+    b04 = a01 * a13 - a03 * a11,
+    b05 = a02 * a13 - a03 * a12;
+  const b06 = a20 * a31 - a21 * a30,
+    b07 = a20 * a32 - a22 * a30,
+    b08 = a20 * a33 - a23 * a30;
+  const b09 = a21 * a32 - a22 * a31,
+    b10 = a21 * a33 - a23 * a31,
+    b11 = a22 * a33 - a23 * a32;
   const det = 1 / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06);
   inv[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
   inv[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
@@ -64,7 +77,10 @@ function poseClip(doc, src, name, period, legSwing) {
     const size = out.getElementSize();
     const last = out.getElement(n - 1, new Array(size).fill(0));
     const target = ch.getTargetNode();
-    const swing = legSwing !== 0 && ch.getTargetPath() === 'rotation' && /^UpperLeg\.[LR]$/.test(target.getName());
+    const swing =
+      legSwing !== 0 &&
+      ch.getTargetPath() === 'rotation' &&
+      /^UpperLeg\.[LR]$/.test(target.getName());
     const keys = swing ? 5 : 2;
     const times = new Float32Array(keys);
     const values = new Float32Array(keys * size);
@@ -83,11 +99,47 @@ function poseClip(doc, src, name, period, legSwing) {
       .setInput(doc.createAccessor().setType('SCALAR').setArray(times))
       .setOutput(doc.createAccessor().setType(out.getType()).setArray(values))
       .setInterpolation('LINEAR');
-    anim.addSampler(sampler).addChannel(
-      doc.createAnimationChannel().setTargetNode(target).setTargetPath(ch.getTargetPath()).setSampler(sampler),
-    );
+    anim
+      .addSampler(sampler)
+      .addChannel(
+        doc
+          .createAnimationChannel()
+          .setTargetNode(target)
+          .setTargetPath(ch.getTargetPath())
+          .setSampler(sampler),
+      );
   }
   return anim;
+}
+
+function smoothNormals(doc, prim) {
+  const pos = prim.getAttribute('POSITION');
+  const idx = prim.getIndices().getArray();
+  const n = new Float32Array(pos.getCount() * 3);
+  const a = [0, 0, 0],
+    b = [0, 0, 0],
+    c = [0, 0, 0];
+  for (let i = 0; i < idx.length; i += 3) {
+    pos.getElement(idx[i], a);
+    pos.getElement(idx[i + 1], b);
+    pos.getElement(idx[i + 2], c);
+    const e1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const e2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    const f = [
+      e1[1] * e2[2] - e1[2] * e2[1],
+      e1[2] * e2[0] - e1[0] * e2[2],
+      e1[0] * e2[1] - e1[1] * e2[0],
+    ];
+    for (const v of [idx[i], idx[i + 1], idx[i + 2]])
+      for (let k = 0; k < 3; k++) n[v * 3 + k] += f[k];
+  }
+  for (let v = 0; v < n.length; v += 3) {
+    const l = Math.hypot(n[v], n[v + 1], n[v + 2]) || 1;
+    n[v] /= l;
+    n[v + 1] /= l;
+    n[v + 2] /= l;
+  }
+  prim.setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(n));
 }
 
 export async function buildBot(B, ctx) {
@@ -159,12 +211,17 @@ export async function buildBot(B, ctx) {
       const nl = [-nv[0], -nv[2], nv[1]];
       const nw = apply(bindWorld, nl, 0);
       const l = Math.hypot(...nw) || 1;
-      N.set(nw.map((c) => c / l), i * 3);
+      N.set(
+        nw.map((c) => c / l),
+        i * 3,
+      );
       J[i * 4] = hand;
       Wt[i * 4] = 1;
     }
     const src = gp.getMaterial();
-    const mat = doc.createMaterial(`rifle-${src.getName()}`).setBaseColorFactor(src.getBaseColorFactor());
+    const mat = doc
+      .createMaterial(`rifle-${src.getName()}`)
+      .setBaseColorFactor(src.getBaseColorFactor());
     const idx = gp.getIndices();
     const prim = doc
       .createPrimitive()
@@ -173,12 +230,12 @@ export async function buildBot(B, ctx) {
       .setAttribute('JOINTS_0', doc.createAccessor().setType('VEC4').setArray(J))
       .setAttribute('WEIGHTS_0', doc.createAccessor().setType('VEC4').setArray(Wt))
       .setMaterial(mat);
-    if (idx) prim.setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint16Array(idx.getArray())));
+    if (idx)
+      prim.setIndices(
+        doc.createAccessor().setType('SCALAR').setArray(new Uint16Array(idx.getArray())),
+      );
     mesh.addPrimitive(prim);
   }
-  // Muzzle node on the hand bone, in hand-local units.
-  const muzzle = doc.createNode('muzzle').setTranslation(toHand([(gb.min[0] + gb.max[0]) / 2, gb.max[1] - 0.1 * (gb.max[1] - gb.min[1]), gb.min[2]]));
-  joints[hand].addChild(muzzle);
 
   // One palette material (single material per LOD, BR-G-50).
   const bindings = await ctx.bakePalette(doc, B.key, 'all', prov);
@@ -190,12 +247,26 @@ export async function buildBot(B, ctx) {
   }
   const joined = mesh.listPrimitives();
   if (joined.length !== 1) throw new Error(`bot: ${joined.length} primitives after palette join`);
+  // Muzzle node on the hand bone, in hand-local units.
+  const muzzle = doc
+    .createNode('muzzle')
+    .setTranslation(
+      toHand([(gb.min[0] + gb.max[0]) / 2, gb.max[1] - 0.1 * (gb.max[1] - gb.min[1]), gb.min[2]]),
+    );
+  joints[hand].addChild(muzzle);
   meshNode.setName(`${B.key}_LOD0`);
   mesh.setName(`${B.key}_LOD0`);
   const tris0 = ctx.triangles(doc);
   if (tris0 > B.lod0) throw new Error(`bot LOD0 has ${tris0} triangles`);
   const lod1Prim = joined[0].clone();
+  // The source is flat-shaded (split vertices with face normals); drop normals and weld so the
+  // simplifier can collapse edges, then rebuild smooth normals for the far LOD.
+  lod1Prim.setAttribute('NORMAL', null);
+  weldPrimitive(lod1Prim, { overwrite: true });
   simplifyPrimitive(lod1Prim, { simplifier: MeshoptSimplifier, ratio: B.lod1 / tris0, error: 1 });
+  smoothNormals(doc, lod1Prim);
+  const tris1 = Math.round(lod1Prim.getIndices().getCount() / 3);
+  if (tris1 > B.lod1) throw new Error(`bot LOD1 has ${tris1} triangles`);
   const lod1Mesh = doc.createMesh(`${B.key}_LOD1`).addPrimitive(lod1Prim);
   const lod1Node = doc.createNode(`${B.key}_LOD1`).setMesh(lod1Mesh).setSkin(skin);
   const armature = root.listNodes().find((n) => n.listChildren().includes(meshNode));
@@ -203,7 +274,10 @@ export async function buildBot(B, ctx) {
 
   // Top node: metres, facing -z (the source faces +z).
   const scene = root.getDefaultScene() ?? root.listScenes()[0];
-  const top = doc.createNode(B.key).setScale(Array(3).fill(1 / metre)).setRotation([0, 1, 0, 0]);
+  const top = doc
+    .createNode(B.key)
+    .setScale(Array(3).fill(1 / metre))
+    .setRotation([0, 1, 0, 0]);
   for (const c of scene.listChildren()) {
     scene.removeChild(c);
     top.addChild(c);

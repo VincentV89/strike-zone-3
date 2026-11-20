@@ -57,7 +57,11 @@ export interface GameRenderer {
    * Downloads and parses every asset of the map (BR-G-08) through the injected AssetPort.
    * Never rejects; makes no I/O before a successful init() (BR-G-02). `onProgress` gets 0..1.
    */
-  loadAssets(map: MapId, signal: AbortSignal, onProgress: (p: number) => void): Promise<AssetLoadReport>;
+  loadAssets(
+    map: MapId,
+    signal: AbortSignal,
+    onProgress: (p: number) => void,
+  ): Promise<AssetLoadReport>;
   /** Applies loaded assets to the built map, falling back per item (BR-G-14). Synchronous. */
   applyAssets(): void;
   spawnActors(n: number): void;

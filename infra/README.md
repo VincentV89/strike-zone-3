@@ -115,3 +115,9 @@ A traffic flood is billed per request and is an accepted risk. The account owner
 - No WAF, so floods become cost (see above).
 - The staged bundles in the bootstrap bucket survive destroy.
 - `ScopeInvalidationAspect` depends on the shape of CDK's generated statement. A shape change fails synth or the tests; review it on every aws-cdk-lib bump.
+
+## Graphics uplift hosting notes
+
+- The bundle grows from about 1 MB to about 18 MB (`dist/assets` .glb, .ktx2 and the Basis transcoder). `WebAssets` publishes js and css; `WebModels` (`model/gltf-binary`), `WebTextures` (`image/ktx2`) and `WebWasm` (`application/wasm`) publish the binaries with an explicit Content-Type, because the deploy Lambda's Python mimetypes table has no `.glb` or `.ktx2`. `WebIndex` depends on all four. Every deployment uses `memoryLimit: 512`, so they share one handler Lambda; the first deploy after this change replaces it once.
+- The CSP lives in `infra/lib/policy.ts` (no aws-cdk-lib import) and is shared by CloudFront, the infra tests, smoke SM-3 and the e2e preview server. It adds `'unsafe-eval' 'wasm-unsafe-eval'` to `script-src` and `worker-src 'self' blob:` for the KTX2 transcoder worker.
+- The SPA fallback answers a missing hashed file with `200 text/html`. The AssetPort rejects `text/html` and the kit checks magic bytes, so a missing asset falls back to the procedural visual instead of breaking the round.

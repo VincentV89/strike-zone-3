@@ -64,7 +64,18 @@ export function placementsFor(
   d.props.forEach(([id, x, y, z, q, s]) => {
     const c = catalog.get(id);
     if (c === undefined) return;
-    out.push({ id, x, y, z, yaw: (q * Math.PI) / 2, scale: s, u: 0, blocking: c.kind !== 'visual', shadow: true, optional: false });
+    out.push({
+      id,
+      x,
+      y,
+      z,
+      yaw: (q * Math.PI) / 2,
+      scale: s,
+      u: 0,
+      blocking: c.kind !== 'visual',
+      shadow: true,
+      optional: false,
+    });
   });
   const optional: Placement[] = [];
   d.scatter.forEach((r, ri) => {
@@ -77,11 +88,33 @@ export function placementsFor(
       const px = r.region.min.x + unit(hash2(h, 1)) * sx;
       const pz = r.region.min.z + unit(hash2(h, 2)) * sz;
       const sc = r.scale[0] + unit(hash2(h, 3)) * (r.scale[1] - r.scale[0]);
-      optional.push({ id: r.kind, x: px, y: r.region.min.y, z: pz, yaw: unit(hash2(h, 4)) * Math.PI * 2, scale: sc, u, blocking: false, shadow: false, optional: true });
+      optional.push({
+        id: r.kind,
+        x: px,
+        y: r.region.min.y,
+        z: pz,
+        yaw: unit(hash2(h, 4)) * Math.PI * 2,
+        scale: sc,
+        u,
+        blocking: false,
+        shadow: false,
+        optional: true,
+      });
     }
   });
   d.backdrop.forEach((b, i) => {
-    optional.push({ id: b.model, x: b.pos.x, y: b.pos.y, z: b.pos.z, yaw: b.yaw, scale: b.scale, u: unit(hash2(i, 911)) * 0.01, blocking: false, shadow: false, optional: true });
+    optional.push({
+      id: b.model,
+      x: b.pos.x,
+      y: b.pos.y,
+      z: b.pos.z,
+      yaw: b.yaw,
+      scale: b.scale,
+      u: unit(hash2(i, 911)) * 0.01,
+      blocking: false,
+      shadow: false,
+      optional: true,
+    });
   });
   optional.sort((a, b) => a.u - b.u);
   const room = Math.max(0, cap - out.length);
@@ -103,6 +136,7 @@ interface Batch {
   readonly pz: Float32Array;
   readonly lod: Int8Array;
   readonly blocking: boolean;
+  readonly optional: boolean;
   readonly lods: number;
 }
 
@@ -115,7 +149,14 @@ function partsOf(root: Object3D, name: string): LodPart[] {
   const out: LodPart[] = [];
   node.traverse((o) => {
     if (o instanceof Mesh && !Array.isArray(o.material)) {
-      out.push({ geometry: o.geometry as BufferGeometry, material: o.material as Material, local: new Matrix4().multiplyMatrices(inv, o.matrixWorld) });
+      // Instanced props never morph; leftover shape keys would break three's morph path.
+      const g = o.geometry as BufferGeometry;
+      if (Object.keys(g.morphAttributes).length > 0) g.morphAttributes = {};
+      out.push({
+        geometry: o.geometry as BufferGeometry,
+        material: o.material as Material,
+        local: new Matrix4().multiplyMatrices(inv, o.matrixWorld),
+      });
     }
   });
   return out;
@@ -137,7 +178,9 @@ export function createDressingApi(deps: DressingDeps): DressingApi {
     build(def: MapDefinition, lookup: AssetLookup, opts: DressingOptions): DressingLayer | null {
       if (def.dressing === undefined) return null;
       const catalog = new Map(def.dressing.catalog.map((c) => [c.id, c] as const));
-      const packEntries = new Map(opts.manifest.filter((e) => e.kind === 'model').map((e) => [e.key, e] as const));
+      const packEntries = new Map(
+        opts.manifest.filter((e) => e.kind === 'model').map((e) => [e.key, e] as const),
+      );
       const bound = new Set<string>();
       const placements = placementsFor(def, catalog, opts.density, opts.cap);
       const byId = new Map<string, Placement[]>();
@@ -152,7 +195,9 @@ export function createDressingApi(deps: DressingDeps): DressingApi {
         list.push(p);
       }
       // Batch budget: blocking props first, then visual props, then optional detail (BR-G-73).
-      const ids = [...byId.keys()].sort((a, b) => rank(byId.get(a)) - rank(byId.get(b)) || a.localeCompare(b));
+      const ids = [...byId.keys()].sort(
+        (a, b) => rank(byId.get(a)) - rank(byId.get(b)) || a.localeCompare(b),
+      );
       const group = new Group();
       group.name = 'dressing';
       const batches: Batch[] = [];
@@ -208,7 +253,18 @@ export function createDressingApi(deps: DressingDeps): DressingApi {
             return mesh;
           });
         const blocking = list[0]?.blocking === true;
-        batches.push({ id, meshes: [mk(lod0, 0), mk(lod1, 1)], matrices, px, pz, lod: new Int8Array(n).fill(-1), blocking, lods: lod1.length > 0 ? 2 : 1 });
+        const optional = list[0]?.optional === true;
+        batches.push({
+          id,
+          meshes: [mk(lod0, 0), mk(lod1, 1)],
+          matrices,
+          px,
+          pz,
+          lod: new Int8Array(n).fill(-1),
+          blocking,
+          optional,
+          lods: lod1.length > 0 ? 2 : 1,
+        });
         instances += n;
       }
 
@@ -227,8 +283,14 @@ export function createDressingApi(deps: DressingDeps): DressingApi {
             const dz = (b.pz[i] ?? 0) - cz;
             const d = Math.sqrt(dx * dx + dz * dz);
             const prev = b.lod[i] ?? -1;
-            const near = prev === 0 ? opts.lod0DistanceM * 1.1 : opts.lod0DistanceM * 0.9;
-            const far = b.blocking ? Infinity : prev >= 0 ? opts.drawDistanceM * 1.1 : opts.drawDistanceM * 0.9;
+            // Scatter detail drops to LOD1 at half the prop distance (triangle ceilings, BR-G-73).
+            const lod0 = b.optional ? opts.lod0DistanceM * 0.5 : opts.lod0DistanceM;
+            const near = prev === 0 ? lod0 * 1.1 : lod0 * 0.9;
+            const far = b.blocking
+              ? Infinity
+              : prev >= 0
+                ? opts.drawDistanceM * 1.1
+                : opts.drawDistanceM * 0.9;
             let lod = d <= near ? 0 : d <= far ? 1 : -1;
             if (lod === 1 && b.lods === 1) lod = 0;
             b.lod[i] = lod;
@@ -262,7 +324,8 @@ export function createDressingApi(deps: DressingDeps): DressingApi {
         batches: calls,
         coveredSolids: new Set<number>(),
         refresh(cx, _cy, cz, t) {
-          const moved = !Number.isFinite(lastX) || Math.hypot(cx - lastX, cz - lastZ) >= REFRESH_MOVE_M;
+          const moved =
+            !Number.isFinite(lastX) || Math.hypot(cx - lastX, cz - lastZ) >= REFRESH_MOVE_M;
           if (!moved && t - lastT < REFRESH_SEC && t >= lastT) return;
           lastT = t;
           lastX = cx;
@@ -270,7 +333,8 @@ export function createDressingApi(deps: DressingDeps): DressingApi {
           pass(cx, cz);
         },
         setCastShadow(on) {
-          for (const b of batches) for (const l of b.meshes) for (const m of l) m.castShadow = on && b.blocking;
+          for (const b of batches)
+            for (const l of b.meshes) for (const m of l) m.castShadow = on && b.blocking;
         },
         dispose() {
           for (const b of batches) for (const l of b.meshes) for (const m of l) m.dispose();

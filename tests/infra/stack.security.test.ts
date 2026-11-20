@@ -176,12 +176,15 @@ describe('browser-facing headers (T-H-3, T-H-4)', () => {
     });
   });
 
-  it('SEC-H-07 CSP is the baseline plus exactly the two graphics-uplift additions (SR-G-01)', () => {
+  it('SEC-H-07 CSP is the baseline plus exactly the graphics-uplift additions (SR-G-01, CG-G-Q1)', () => {
     expect(CSP).toBe(
-      "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+      "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
     );
-    // The only unsafe- token is wasm-unsafe-eval, which does not allow JS eval.
-    expect(CSP.replace("'wasm-unsafe-eval'", '')).not.toContain('unsafe-');
+    // Only 'unsafe-eval' (Basis transcoder, CG-G-Q1) and 'wasm-unsafe-eval'; never unsafe-inline.
+    expect(CSP.replace("'wasm-unsafe-eval'", '').replace("'unsafe-eval'", '')).not.toContain(
+      'unsafe-',
+    );
+    expect(CSP).not.toContain('unsafe-inline');
     expect(CSP).not.toMatch(/img-src[^;]*blob:/);
     expect(CSP).toMatch(/connect-src 'self';/);
     expect(PERMISSIONS_POLICY).toBe('camera=(), microphone=(), geolocation=(), payment=(), usb=()');

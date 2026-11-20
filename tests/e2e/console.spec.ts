@@ -18,9 +18,14 @@ import { writeMasked } from '../../scripts/verification/write.ts';
 const MAPS = ['desert-compound', 'industrial-warehouse'] as const;
 const STEP_TIMEOUT = 30_000;
 const FAULT_CODES = new Set(['app/frame-fault', 'app/frame-fault-tripped']);
+/** Asset and CSP signals that must not fire with the production headers (BR-G-84). */
+const ASSET_CODE = /^(render\/asset-|render\/texture-budget|app\/csp-violation)/;
+/** WebGL RGBA (uncompressed) format id; textures must transcode to a GPU format. */
+const RGBA_FORMAT = 1023;
 
 interface Seams {
   state(): string;
+  renderStats(): Record<string, unknown>;
   setSeed(seed: number): void;
   fastForward(ticks: number): void;
   readonly marker: string;
@@ -108,6 +113,14 @@ for (const map of MAPS) {
       await waitState(page, ['countdown']);
       await fastForward(page, 210);
       await waitState(page, ['live']);
+      // E2E-06 the authored look loaded with the production CSP (BR-G-84).
+      const rs = await page.evaluate(() =>
+        (window as unknown as { __strikezone: Seams }).__strikezone.renderStats(),
+      );
+      expect(rs['assetFallbacks']).toBe(0);
+      expect(rs['envActive']).toBe(true);
+      expect(rs['skinnedBots']).toBe(5);
+      expect(rs['textureFormats']).not.toContain(RGBA_FORMAT);
       // The default round is 180 s (10,800 ticks), so 11,400 ticks always end it.
       for (let i = 0; i < 19 && !['eliminated', 'end'].includes(await state(page)); i++) {
         await fastForward(page, 600);
@@ -137,6 +150,7 @@ for (const map of MAPS) {
     }
     expect(w.errors).toEqual([]);
     expect(w.warnCodes.filter((c) => FAULT_CODES.has(c))).toEqual([]);
+    expect(w.warnCodes.filter((c) => ASSET_CODE.test(c))).toEqual([]);
   });
 }
 

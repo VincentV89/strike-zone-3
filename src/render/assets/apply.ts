@@ -1,20 +1,11 @@
 /**
- * Asset applier (business-logic-model §5, BR-G-14, BR-G-70). Entry chunk: it only picks
- * targets and fallbacks and calls the kit runtime, so the procedural renderer keeps
- * working when the kit never loads. Uploads happen here (through the runtime), never in
- * render().
+ * Asset applier (business-logic-model §5, BR-G-14, BR-G-70). Lazy kit chunk (moved out of
+ * the entry by the over-budget order, performance-design §1.3): it only runs once the kit has
+ * loaded. Uploads happen here (through the runtime), never in render().
  */
-import { Color, type MeshStandardMaterial, type Object3D } from 'three';
+import { Color, type Material, type MeshStandardMaterial, type Object3D } from 'three';
 import type { MapDefinition, MaterialHint } from '../../maps';
 import type { AssetEntry, AssetLookup, AssetRuntime } from './types';
-
-/** Viewmodel keys in BotWeaponIndex order (rifle, pistol, sniper). */
-export const VIEWMODEL_KEYS = ['vm-rifle', 'vm-pistol', 'vm-sniper'] as const;
-export const BOT_KEY = 'bot-soldier';
-
-export function entryOf(runtime: AssetRuntime, key: string): AssetEntry | undefined {
-  return runtime.manifest.find((e) => e.key === key);
-}
 
 /**
  * Binds the authored PBR set of every hint whose three textures are ready (BR-G-70).
@@ -22,13 +13,13 @@ export function entryOf(runtime: AssetRuntime, key: string): AssetEntry | undefi
  */
 export function applyPbrSets(
   def: MapDefinition,
-  materials: ReadonlyMap<string, MeshStandardMaterial>,
+  materials: ReadonlyMap<string, Material>,
   runtime: AssetRuntime,
   lookup: AssetLookup,
 ): number {
   let n = 0;
   for (const hint of def.materials) {
-    const mat = materials.get(hint.id);
+    const mat = materials.get(hint.id) as MeshStandardMaterial | undefined;
     if (mat === undefined || hint.pbr === undefined) continue;
     const set = runtime.textureSets[hint.pbr];
     if (set === undefined) continue;

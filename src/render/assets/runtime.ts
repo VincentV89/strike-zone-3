@@ -23,6 +23,7 @@ import {
 } from 'three';
 import type { Diagnostics } from '../../core';
 import { createCharacterApi } from './character';
+import { applyPbrSets, attachViewmodel } from './apply';
 import { createDressingApi } from './dressing';
 import type {
   AssetEntry,
@@ -83,7 +84,9 @@ export function createRuntimeCore(
 
   function build(key: AssetKey, p: ParsedTexture, repeat: boolean): Cached {
     const drop = mipDrop(p.width, p.height, p.mipmaps.length, maxPx);
-    const mips = p.mipmaps.slice(drop).map((m) => ({ data: m.data, width: m.width, height: m.height }));
+    const mips = p.mipmaps
+      .slice(drop)
+      .map((m) => ({ data: m.data, width: m.width, height: m.height }));
     const top = mips[0] ?? { width: 1, height: 1 };
     const tex = new CompressedTexture(
       mips as unknown as ImageData[],
@@ -125,7 +128,12 @@ export function createRuntimeCore(
     m.needsUpdate = true;
   }
 
-  function bindSlot(material: Material, slot: TextureSlot, key: AssetKey, lookup: AssetLookup): boolean {
+  function bindSlot(
+    material: Material,
+    slot: TextureSlot,
+    key: AssetKey,
+    lookup: AssetLookup,
+  ): boolean {
     const tex = texture(key, lookup);
     if (tex === null) return false;
     setSlot(material, slot, tex);
@@ -164,7 +172,10 @@ export function createRuntimeCore(
         const keys = resolve(b);
         if (keys.bc === undefined || lookup.texture(keys.bc) === null) continue; // GLB colour factor fallback
         const allThree = keys.n !== undefined && keys.orm !== undefined;
-        if (allThree && (lookup.texture(keys.n ?? '') === null || lookup.texture(keys.orm ?? '') === null)) {
+        if (
+          allThree &&
+          (lookup.texture(keys.n ?? '') === null || lookup.texture(keys.orm ?? '') === null)
+        ) {
           continue; // a set applies only when all three are ready (BR-G-70)
         }
         const std = mat as MeshStandardMaterial;
@@ -232,9 +243,15 @@ export function createRuntimeCore(
       for (const e of envs.values()) e.dispose();
       envs.clear();
     },
-    character: createCharacterApi({ clone: (o) => platform.clone(o), bindTextures: (r, e, l) => bindModelTextures(r, e, l) }),
+    character: createCharacterApi({
+      clone: (o) => platform.clone(o),
+      bindTextures: (r, e, l) => bindModelTextures(r, e, l),
+    }),
     dressing: createDressingApi({ bindTextures: (r, e, l) => bindModelTextures(r, e, l) }),
     bindModelTextures,
+    applyPbrSets: (def, materials, lookup) => applyPbrSets(def, materials, runtime, lookup),
+    attachViewmodel: (rig, hide, socket, model, entry, lookup) =>
+      attachViewmodel(rig, hide, socket, model, entry, runtime, lookup),
     dispose() {
       for (const c of cache.values()) c.tex.dispose();
       for (const e of envs.values()) e.dispose();

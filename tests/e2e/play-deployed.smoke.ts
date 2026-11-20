@@ -18,6 +18,7 @@ import { writeMasked } from '../../scripts/verification/write.ts';
 
 const LOCAL_ORIGIN = /^http:\/\/127\.0\.0\.1:\d{2,5}$/;
 const FAULT_CODES = new Set(['app/frame-fault', 'app/frame-fault-tripped']);
+const ASSET_CODE = /^(render\/asset-|render\/texture-budget|app\/csp-violation)/;
 const LOAD_TIMEOUT = 120_000;
 const LIVE_TIMEOUT = 120_000;
 
@@ -89,7 +90,8 @@ test('deployed game: Start Game starts a match (countdown, then live HUD)', asyn
 
     await page.screenshot({ path: 'reports/playwright/deployed-live.png' });
   } finally {
-    const faults = [...new Set(warnCodes)].filter((c) => FAULT_CODES.has(c));
+    // BR-G-84: asset fallbacks and CSP blocks fail the deployed smoke too.
+    const faults = [...new Set(warnCodes)].filter((c) => FAULT_CODES.has(c) || ASSET_CODE.test(c));
     const pass = Object.values(steps).every(Boolean) && errors.length === 0 && faults.length === 0;
     writeMasked(
       '.',
@@ -105,5 +107,7 @@ test('deployed game: Start Game starts a match (countdown, then live HUD)', asyn
     );
   }
   expect(errors).toEqual([]);
-  expect([...new Set(warnCodes)].filter((c) => FAULT_CODES.has(c))).toEqual([]);
+  expect([...new Set(warnCodes)].filter((c) => FAULT_CODES.has(c) || ASSET_CODE.test(c))).toEqual(
+    [],
+  );
 });

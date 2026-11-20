@@ -128,7 +128,7 @@ export const MANIFEST_ENTRIES: readonly AssetEntry[] = [
     maps: ['desert-compound'],
     colour: 'srgb',
     maxTexturePx: 2048,
-    bytes: 355450,
+    bytes: 356159,
     url: u0,
   },
   {
@@ -137,7 +137,7 @@ export const MANIFEST_ENTRIES: readonly AssetEntry[] = [
     maps: ['industrial-warehouse'],
     colour: 'srgb',
     maxTexturePx: 2048,
-    bytes: 383130,
+    bytes: 383789,
     url: u1,
   },
   {
@@ -1466,7 +1466,7 @@ export const MANIFEST_ENTRIES: readonly AssetEntry[] = [
     requiredNodes: ['muzzle', 'bot-soldier_LOD0', 'bot-soldier_LOD1'],
     requiredClips: ['idle', 'walk', 'run', 'crouch-idle', 'crouch-walk', 'shoot', 'death'],
     textures: { 'bot-soldier__0': { bc: 'tex-bot-soldier-bc' } },
-    bytes: 591088,
+    bytes: 526200,
     url: u116,
   },
 ];

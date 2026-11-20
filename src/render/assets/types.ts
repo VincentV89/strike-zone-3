@@ -50,7 +50,11 @@ export type TextureSetTable = Readonly<Record<string, TextureSetRow>>;
 /** Injected by app-shell at construction (BR-G-01). The renderer itself does no I/O. */
 export interface AssetPort {
   /** Rejects with an AbortError on abort, or another error on HTTP/network/V0 failure. */
-  fetchBytes(url: string, signal: AbortSignal, onBytes: (received: number) => void): Promise<Uint8Array>;
+  fetchBytes(
+    url: string,
+    signal: AbortSignal,
+    onBytes: (received: number) => void,
+  ): Promise<Uint8Array>;
   /** Memoised `import()` of the kit chunk (BR-G-02). */
   loadKit(): Promise<AssetKitModule>;
 }
@@ -69,7 +73,11 @@ export interface ParsedTexture {
   readonly kind: 'texture';
   readonly width: number;
   readonly height: number;
-  readonly mipmaps: readonly { readonly data: ArrayBufferView; readonly width: number; readonly height: number }[];
+  readonly mipmaps: readonly {
+    readonly data: ArrayBufferView;
+    readonly width: number;
+    readonly height: number;
+  }[];
   readonly format: number;
   readonly type: number;
   readonly srgb: boolean;
@@ -134,12 +142,32 @@ export interface AssetRuntime {
   readonly dressing: DressingApi;
   /** Binds a loaded model's material textures from its manifest entry; false when any fails. */
   bindModelTextures(root: Object3D, entry: AssetEntry, lookup: AssetLookup): boolean;
+  /** Binds the PBR set of every hint whose three textures are ready (BR-G-70); returns the count. */
+  applyPbrSets(
+    def: MapDefinition,
+    materials: ReadonlyMap<string, Material>,
+    lookup: AssetLookup,
+  ): number;
+  /** Puts a weapon model under its viewmodel rig (BR-G-40/41); false keeps the box rig. */
+  attachViewmodel(
+    rig: Object3D,
+    hide: readonly Object3D[],
+    muzzleSocket: Object3D,
+    model: Object3D,
+    entry: AssetEntry,
+    lookup: AssetLookup,
+  ): boolean;
   dispose(): void;
 }
 
 /** Bot characters (character.ts). */
 export interface CharacterApi {
-  createPool(model: ParsedModel, entry: AssetEntry, count: number, lookup: AssetLookup): BotCharacterPool | null;
+  createPool(
+    model: ParsedModel,
+    entry: AssetEntry,
+    count: number,
+    lookup: AssetLookup,
+  ): BotCharacterPool | null;
 }
 
 export interface BotFrame {
@@ -152,7 +180,7 @@ export interface BotFrame {
   alive: boolean;
   /** Seconds since death, −1 while alive. */
   deathAge: number;
-  /** Seconds since the last shot, −1 for none in the window. */
+  /** Seconds since the last shot, −1 when it has not fired yet. */
   fireAge: number;
   /** 0..1 brightness multiplier (death darkening). */
   bright: number;

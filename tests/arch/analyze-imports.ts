@@ -55,7 +55,7 @@ interface RawImport {
   line: number;
 }
 
-const ASSET_EXTENSIONS = /\.(css|svg|png|jpe?g|gif|webp|json|wasm)(\?.*)?$/;
+const ASSET_EXTENSIONS = /\.(css|svg|png|jpe?g|gif|webp|json|wasm|glb|ktx2)(\?.*)?$/;
 
 export function componentOf(path: string, table: readonly ComponentSpec[]): ComponentSpec | null {
   let best: ComponentSpec | null = null;

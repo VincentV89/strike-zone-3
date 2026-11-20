@@ -71,11 +71,19 @@ describe('npm run verify', () => {
   });
 
   // app-shell (cicd-pipeline-app-shell): check:seams scans the final dist/ last.
-  it('runs check:seams as the last step and keeps build:test out of the gate', () => {
+  it('runs check:seams after check:licences and keeps build:test out of the gate', () => {
     const steps = verifySteps(verify);
-    expect(steps.at(-1)).toBe('check:seams');
+    expect(steps.indexOf('check:seams')).toBe(steps.indexOf('check:licences') + 1);
     expect(pkg.scripts['check:seams']).toBe('node scripts/check-seams.ts');
     expect(pkg.scripts['build:test']).toBe('vite build --mode test --outDir dist-test');
     expect(steps).not.toContain('build:test');
+  });
+
+  // graphics uplift (cicd-pipeline-graphics-uplift, TS-G-07): check:assets is appended last.
+  it('runs check:assets as the last step, right after check:seams', () => {
+    const steps = verifySteps(verify);
+    expect(steps.at(-1)).toBe('check:assets');
+    expect(steps.at(-2)).toBe('check:seams');
+    expect(pkg.scripts['check:assets']).toBe('node scripts/check-assets.ts');
   });
 });

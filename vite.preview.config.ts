@@ -7,7 +7,4 @@ import { defineConfig, mergeConfig } from 'vite';
 import { PREVIEW_HEADERS } from './infra/lib/policy.ts';
 import base from './vite.config.ts';
 
-export default mergeConfig(
-  base,
-  defineConfig({ preview: { headers: { ...PREVIEW_HEADERS } } }),
-);
+export default mergeConfig(base, defineConfig({ preview: { headers: { ...PREVIEW_HEADERS } } }));

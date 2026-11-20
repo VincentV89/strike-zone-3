@@ -28,7 +28,8 @@ export interface RingPolicy {
 
 export const RING_POLICIES: readonly RingPolicy[] = [
   { ring: 'sim', allowedPackages: [] },
-  { ring: 'adapter', allowedPackages: ['three', 'three/examples/jsm/*'] },
+  // three/addons: ESLint block C and tests/render/no-loaders.test.ts confine it to the asset kit.
+  { ring: 'adapter', allowedPackages: ['three', 'three/examples/jsm/*', 'three/addons/*'] },
   { ring: 'delivery', allowedPackages: [] },
 ];
 

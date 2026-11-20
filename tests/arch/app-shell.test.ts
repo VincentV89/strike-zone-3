@@ -21,10 +21,10 @@ function isModeTestGuard(e: ts.Expression): boolean {
   );
 }
 
-describe('seam gate (SD-AS-01)', () => {
-  it('src/app has exactly one import(), in main.ts, inside if (import.meta.env.MODE === "test")', () => {
-    const found: { path: string; guarded: boolean; spec: string }[] = [];
-    for (const f of allSrc().filter((x) => x.path.startsWith('src/app/'))) {
+describe('seam gate (SD-AS-01) and kit import (BR-G-02)', () => {
+  it('src/ has exactly two import()s, both in main.ts: the guarded seam and the memoised kit', () => {
+    const found: { path: string; guarded: boolean; spec: string; memo: boolean }[] = [];
+    for (const f of allSrc()) {
       walk(f.sf, (n) => {
         if (!ts.isCallExpression(n) || n.expression.kind !== ts.SyntaxKind.ImportKeyword) return;
         let guarded = false;
@@ -32,14 +32,38 @@ describe('seam gate (SD-AS-01)', () => {
           if (ts.isIfStatement(p) && isModeTestGuard(p.expression)) guarded = true;
         }
         const arg = n.arguments[0];
+        // memo(() => import(...)) assigned to `const loadKit` at module scope.
+        const arrow = n.parent;
+        const call = arrow.parent;
+        const decl = call.parent;
+        const memo =
+          ts.isArrowFunction(arrow) &&
+          ts.isCallExpression(call) &&
+          ts.isIdentifier(call.expression) &&
+          call.expression.text === 'memo' &&
+          ts.isVariableDeclaration(decl) &&
+          ts.isIdentifier(decl.name) &&
+          decl.name.text === 'loadKit' &&
+          ts.isSourceFile(decl.parent.parent.parent);
         found.push({
           path: f.path,
           guarded,
           spec: arg !== undefined && ts.isStringLiteral(arg) ? arg.text : '?',
+          memo,
         });
       });
     }
-    expect(found).toEqual([{ path: 'src/app/main.ts', guarded: true, spec: '../dev' }]);
+    expect(found).toEqual([
+      { path: 'src/app/main.ts', guarded: false, spec: '../render/assets/kit', memo: true },
+      { path: 'src/app/main.ts', guarded: true, spec: '../dev', memo: false },
+    ]);
+  });
+
+  it('main.ts hands loadKit only to createGameRenderer as assets.loadKit (BR-G-02)', () => {
+    const text = readFileSync('src/app/main.ts', 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
+    const uses = [...text.matchAll(/\bloadKit\b/g)].length;
+    expect(uses).toBe(2); // the declaration and the `assets: { fetchBytes, loadKit }` property
+    expect(text).toMatch(/assets: \{ fetchBytes, loadKit \}/);
   });
 
   it('nothing in src/ statically imports src/dev', () => {

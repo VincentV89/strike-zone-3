@@ -30,6 +30,9 @@ export default defineConfig({
         'src/app/main.ts',
         'src/app/pointer-lock.ts',
         'src/render/gl-host.ts',
+        // The asset kit's browser half (KTX2 worker, PMREM, WebGLRenderer); covered by e2e,
+        // and its pure parts (glb-check, runtime, character, dressing) by Node tests.
+        'src/render/assets/kit.ts',
         '**/*.d.ts',
       ],
       reporter: ['text-summary', 'json-summary'],
@@ -40,6 +43,7 @@ export default defineConfig({
         'src/maps/**': { lines: 80 }, // BR-M-92
         'src/ui/hud/**': { lines: 80 },
         'src/render/**': { lines: 80 }, // NFR-P-Q2
+        'src/render/assets/**': { lines: 80 }, // graphics uplift
         'src/physics/**': { lines: 80 }, // BR-CN-97
         'src/nav/**': { lines: 80 }, // BR-CN-97
         'src/settings/**': { lines: 80 },

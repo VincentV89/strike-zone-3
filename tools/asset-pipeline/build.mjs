@@ -16,12 +16,24 @@
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Document, NodeIO } from '@gltf-transform/core';
-import { ALL_EXTENSIONS, EXTMeshoptCompression, KHRMeshQuantization } from '@gltf-transform/extensions';
+import {
+  ALL_EXTENSIONS,
+  EXTMeshoptCompression,
+  KHRMeshQuantization,
+} from '@gltf-transform/extensions';
 import {
   clearNodeTransform,
   cloneDocument,
@@ -153,11 +165,18 @@ function record(path, source) {
  * Encodes an image to KTX2 with a full mip chain. kind: bc (sRGB ETC1S), orm (linear ETC1S),
  * n (linear UASTC + zstd), sky (sRGB ETC1S). Returns { path, width, height }.
  */
-export async function encodeKtx2(input, outPath, { px, height, kind, alpha = false }) {
+export async function encodeKtx2(
+  input,
+  outPath,
+  { px, height, kind, alpha = false, flipY = false },
+) {
   const w = px;
   const h = height ?? px;
   const tmp = join(tmpdir(), `sz-${createHash('md5').update(outPath).digest('hex')}.png`);
   let img = sharp(input).resize(w, h, { fit: 'fill', kernel: 'lanczos3' });
+  // KTX2 rows are top-down and three uploads compressed textures without flipY, so an
+  // equirect sky is flipped here to come out upright.
+  if (flipY) img = img.flip();
   img = alpha ? img.ensureAlpha() : img.removeAlpha();
   await img.png().toFile(tmp);
   mkdirSync(dirname(outPath), { recursive: true });
@@ -231,15 +250,28 @@ export function matrix({ rotX = 0, rotY = 0, rotZ = 0, scale = 1, t = [0, 0, 0] 
   const mul = (a, b) => {
     const o = new Array(9).fill(0);
     for (let c = 0; c < 3; c++)
-      for (let r = 0; r < 3; r++) for (let k = 0; k < 3; k++) o[c * 3 + r] += a[k * 3 + r] * b[c * 3 + k];
+      for (let r = 0; r < 3; r++)
+        for (let k = 0; k < 3; k++) o[c * 3 + r] += a[k * 3 + r] * b[c * 3 + k];
     return o;
   };
   const R = mul(Y, mul(X, Z));
   return [
-    R[0] * scale, R[1] * scale, R[2] * scale, 0,
-    R[3] * scale, R[4] * scale, R[5] * scale, 0,
-    R[6] * scale, R[7] * scale, R[8] * scale, 0,
-    t[0], t[1], t[2], 1,
+    R[0] * scale,
+    R[1] * scale,
+    R[2] * scale,
+    0,
+    R[3] * scale,
+    R[4] * scale,
+    R[5] * scale,
+    0,
+    R[6] * scale,
+    R[7] * scale,
+    R[8] * scale,
+    0,
+    t[0],
+    t[1],
+    t[2],
+    1,
   ];
 }
 
@@ -261,7 +293,11 @@ export async function simplifiedCopy(doc, targetTris) {
   const tris = triangles(copy);
   if (tris > targetTris) {
     await copy.transform(
-      simplify({ simplifier: MeshoptSimplifier, ratio: Math.max(0.002, targetTris / tris), error: 1 }),
+      simplify({
+        simplifier: MeshoptSimplifier,
+        ratio: Math.max(0.002, targetTris / tris),
+        error: 1,
+      }),
     );
   }
   return copy;
@@ -320,7 +356,8 @@ export function checkGlb(bin, label) {
   const json = JSON.parse(new TextDecoder().decode(bin.subarray(20, 20 + jsonLen)));
   for (const k of ['images', 'textures', 'samplers'])
     if ((json[k] ?? []).length > 0) throw new Error(`${label}: GLB carries ${k}`);
-  for (const b of json.buffers ?? []) if (b.uri !== undefined) throw new Error(`${label}: buffer uri`);
+  for (const b of json.buffers ?? [])
+    if (b.uri !== undefined) throw new Error(`${label}: buffer uri`);
   const req = json.extensionsRequired ?? [];
   for (const e of req)
     if (e !== 'EXT_meshopt_compression' && e !== 'KHR_mesh_quantization')
@@ -359,7 +396,10 @@ async function emitMaterialTextures(prefix, src, px, maps, prov, opts = {}) {
     const alpha = s.alphaMode !== 'OPAQUE';
     if (alpha && bcIn !== null) {
       const pngDir = join(dirname(dirname(bcIn)), 'png');
-      const base = bcIn.split('/').pop().replace(/\.jpg$/, '.png');
+      const base = bcIn
+        .split('/')
+        .pop()
+        .replace(/\.jpg$/, '.png');
       const want = opts.dryDiffuse === true ? base.replace('_diff_', '_dry_diff_') : base;
       if (existsSync(join(pngDir, want))) bcIn = join(pngDir, want);
       s.material.setAlphaMode('MASK').setAlphaCutoff(0.5).setDoubleSided(true);
@@ -403,13 +443,23 @@ async function buildProp(p) {
   const src = stripTextures(doc, dirname(gltf));
   const node = await collapse(doc);
   const mesh = node.getMesh();
+  // Instanced props never morph: drop shape keys (the wheel rim ships one).
+  for (const prim of mesh.listPrimitives())
+    for (const t of prim.listTargets()) prim.removeTarget(t);
   if (p.rot) transformMesh(mesh, matrix(p.rot));
   if (p.scale) transformMesh(mesh, matrix({ scale: p.scale }));
   groundAndCentre(mesh, node);
   if (mesh.listPrimitives().length > (p.maxPrims ?? 2))
     throw new Error(`${p.id}: ${mesh.listPrimitives().length} primitives after join`);
   const pack = PACKS[p.pack];
-  const bindings = await emitMaterialTextures(p.id, src, p.texPx ?? 512, pack.maps, SOURCE_PH(p.ph, 'texture'), p);
+  const bindings = await emitMaterialTextures(
+    p.id,
+    src,
+    p.texPx ?? 512,
+    pack.maps,
+    SOURCE_PH(p.ph, 'texture'),
+    p,
+  );
   const lod0 = await simplifiedCopy(doc, p.lod0);
   const lod1 = p.lod1 ? await simplifiedCopy(doc, p.lod1) : null;
   const b = getBounds(node);
@@ -475,7 +525,8 @@ async function buildPack(key, built) {
     tris += triangles(lod0);
     if (lod1) top.addChild(adopt(pack, lod1, `${p.id}_LOD1`));
   }
-  for (const n of [...scene.listChildren()]) if (!built.some((b) => b.p.id === n.getName())) n.dispose();
+  for (const n of [...scene.listChildren()])
+    if (!built.some((b) => b.p.id === n.getName())) n.dispose();
   const file = join(OUT, 'models', `${key}.glb`);
   await writeGlb(pack, file);
   record(file, {
@@ -492,7 +543,11 @@ async function buildPack(key, built) {
     kind: 'model',
     maps: PACKS[key].maps,
     maxTriangles: Math.ceil(tris * 1.05),
-    requiredNodes: built.flatMap((b) => [b.p.id, `${b.p.id}_LOD0`, ...(b.lod1 ? [`${b.p.id}_LOD1`] : [])]),
+    requiredNodes: built.flatMap((b) => [
+      b.p.id,
+      `${b.p.id}_LOD0`,
+      ...(b.lod1 ? [`${b.p.id}_LOD1`] : []),
+    ]),
     requiredClips: [],
     textures,
   });
@@ -514,7 +569,11 @@ async function buildTextureSets() {
       const file = join(OUT, 'textures', `${k}.ktx2`);
       await encodeKtx2(input, file, { px: 1024, kind: slot });
       record(file, SOURCE_PH(def.ph, `PBR set ${key}`));
-      addTextureEntry(k, file, { maps: def.maps, colour: slot === 'bc' ? 'srgb' : 'linear', maxTexturePx: 1024 });
+      addTextureEntry(k, file, {
+        maps: def.maps,
+        colour: slot === 'bc' ? 'srgb' : 'linear',
+        maxTexturePx: 1024,
+      });
       keys[slot] = k;
     }
     sets[key] = { ...keys, maps: def.maps };
@@ -527,9 +586,16 @@ async function buildSkies() {
     const input = await polyHavenSky(def.ph);
     const k = `sky-${key}`;
     const file = join(OUT, 'sky', `${k}.ktx2`);
-    await encodeKtx2(input, file, { px: 2048, height: 1024, kind: 'sky' });
+    await encodeKtx2(input, file, { px: 2048, height: 1024, kind: 'sky', flipY: true });
     record(file, SOURCE_PH(def.ph, 'tonemapped HDRI, 2048x1024'));
-    manifest.push({ key: k, file: rel(file), kind: 'sky', maps: def.maps, colour: 'srgb', maxTexturePx: 2048 });
+    manifest.push({
+      key: k,
+      file: rel(file),
+      kind: 'sky',
+      maps: def.maps,
+      colour: 'srgb',
+      maxTexturePx: 2048,
+    });
   }
 }
 
@@ -565,7 +631,9 @@ async function buildWeapon(w) {
   b = getBounds(node);
   transformMesh(
     mesh,
-    matrix({ t: [-(b.min[0] + b.max[0]) / 2, w.muzzle[1] - b.max[1] + 0.03, w.muzzle[2] - b.min[2]] }),
+    matrix({
+      t: [-(b.min[0] + b.max[0]) / 2, w.muzzle[1] - b.max[1] + 0.03, w.muzzle[2] - b.min[2]],
+    }),
   );
   let bindings;
   if (w.obj) {
@@ -601,7 +669,6 @@ async function buildWeapon(w) {
   });
 }
 
-
 function positions(mesh) {
   const out = [];
   const v = [0, 0, 0];
@@ -625,11 +692,17 @@ export function orientWeapon(mesh, node) {
   const side = rest.find((i) => i !== up);
   const pts = positions(mesh);
   const slab = (atMin) =>
-    pts.filter((p) => (atMin ? p[long] < b.min[long] + 0.06 * ext[long] : p[long] > b.max[long] - 0.06 * ext[long]));
+    pts.filter((p) =>
+      atMin ? p[long] < b.min[long] + 0.06 * ext[long] : p[long] > b.max[long] - 0.06 * ext[long],
+    );
   const spread = (ps) => {
     if (ps.length === 0) return Infinity;
-    let lo = Infinity, hi = -Infinity;
-    for (const p of ps) { lo = Math.min(lo, p[up]); hi = Math.max(hi, p[up]); }
+    let lo = Infinity,
+      hi = -Infinity;
+    for (const p of ps) {
+      lo = Math.min(lo, p[up]);
+      hi = Math.max(hi, p[up]);
+    }
     return hi - lo;
   };
   const muzzleAtMin = spread(slab(true)) < spread(slab(false));
@@ -638,8 +711,10 @@ export function orientWeapon(mesh, node) {
   const upSign = muzzleUp >= (b.min[up] + b.max[up]) / 2 ? 1 : -1;
   const zSign = muzzleAtMin ? 1 : -1; // muzzle (min end) must map to -z
   // new z = zSign * old[long]; new y = upSign * old[up]; new x = cross(y, z) for a proper rotation.
-  const Z = [0, 0, 0]; Z[long] = zSign;
-  const Y = [0, 0, 0]; Y[up] = upSign;
+  const Z = [0, 0, 0];
+  Z[long] = zSign;
+  const Y = [0, 0, 0];
+  Y[up] = upSign;
   const X = [Y[1] * Z[2] - Y[2] * Z[1], Y[2] * Z[0] - Y[0] * Z[2], Y[0] * Z[1] - Y[1] * Z[0]];
   void side;
   // Rows of the rotation are X, Y, Z (new = R * old); column-major for gltf-transform.
@@ -658,7 +733,8 @@ export async function bakePalette(doc, key, maps, prov, px = 256, gain = 2.5) {
   const cellPx = px / cells;
   mats.forEach((m, i) => {
     const [r, g, b] = m.getBaseColorFactor().map((c) => Math.min(1, c * gain));
-    const s = (v) => Math.round(255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055));
+    const s = (v) =>
+      Math.round(255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055));
     const cx = (i % cells) * cellPx;
     const cy = Math.floor(i / cells) * cellPx;
     for (let y = cy; y < cy + cellPx; y++)
@@ -688,7 +764,9 @@ export async function bakePalette(doc, key, maps, prov, px = 256, gain = 2.5) {
   for (const m of mats) m.dispose();
   await doc.transform(joinPrims({ keepNamed: false }), prune());
   const tmp = join(tmpdir(), `sz-palette-${key}.png`);
-  await sharp(raw, { raw: { width: px, height: px, channels: 3 } }).png().toFile(tmp);
+  await sharp(raw, { raw: { width: px, height: px, channels: 3 } })
+    .png()
+    .toFile(tmp);
   const k = `tex-${key}-bc`;
   const file = join(OUT, 'textures', `${k}.ktx2`);
   await encodeKtx2(tmp, file, { px, kind: 'bc' });
@@ -721,7 +799,9 @@ function writeGenerated({ manifest, catalog, sets }) {
       `export const PROP_CATALOG_DATA: readonly PropCatalogEntry[] = ${JSON.stringify(cat, null, 2)};\n`,
   );
   // Manifest (kit chunk): hashed ?url imports only (BR-G-05).
-  const imports = manifest.map((e, i) => `import u${String(i)} from '../../../${e.file}?url';`).join('\n');
+  const imports = manifest
+    .map((e, i) => `import u${String(i)} from '../../../${e.file}?url';`)
+    .join('\n');
   const entries = manifest
     .map((e, i) => {
       const bytes = statSync(join(ROOT, e.file)).size;
@@ -745,11 +825,72 @@ function writeGenerated({ manifest, catalog, sets }) {
   );
 }
 
+/** Re-encodes only the skies (same keys and paths), keeping every other committed output. */
+async function rebuildSkiesOnly() {
+  const prevRec = JSON.parse(readFileSync(join(OUT, '.pipeline.json'), 'utf8'));
+  await buildSkies();
+  const touched = new Set(records.map((r) => r.path));
+  prevRec.files = prevRec.files
+    .filter((r) => !touched.has(r.path))
+    .concat(records)
+    .sort((a, b) => a.path.localeCompare(b.path));
+  writeFileSync(join(OUT, '.pipeline.json'), JSON.stringify(prevRec, null, 2) + '\n');
+  writeGenerated(JSON.parse(readFileSync(join(OUT, '.manifest.json'), 'utf8')));
+  process.stdout.write(`skies rebuilt: ${records.map((r) => `${r.path} ${r.bytes}`).join(', ')}\n`);
+}
+
+/** Rebuilds only the bot GLB and its palette texture, keeping every other committed output. */
+async function rebuildBotOnly() {
+  const saved = JSON.parse(readFileSync(join(OUT, '.manifest.json'), 'utf8'));
+  const prevProv = JSON.parse(readFileSync(join(ROOT, 'assets-provenance.json'), 'utf8'));
+  const prevRec = JSON.parse(readFileSync(join(OUT, '.pipeline.json'), 'utf8'));
+  const isBot = (key) => key === BOT.key || key === `tex-${BOT.key}-bc`;
+  const bot = await buildBot(BOT, {
+    driveFile,
+    io,
+    encodeKtx2,
+    record,
+    addTextureEntry,
+    bakePalette,
+    writeGlb,
+    simplifiedCopy,
+    triangles,
+    OUT,
+    readObj,
+    collapse,
+    matrix,
+  });
+  const fresh = [...manifest, bot];
+  saved.manifest = saved.manifest.filter((e) => !isBot(e.key)).concat(fresh);
+  const touched = new Set(records.map((r) => r.path));
+  const prov = prevProv
+    .filter((p) => !touched.has(p.path))
+    .concat(provenance)
+    .sort((a, b) => a.path.localeCompare(b.path));
+  prevRec.files = prevRec.files
+    .filter((r) => !touched.has(r.path))
+    .concat(records)
+    .sort((a, b) => a.path.localeCompare(b.path));
+  writeFileSync(join(OUT, '.manifest.json'), JSON.stringify(saved, null, 2) + '\n');
+  writeFileSync(join(ROOT, 'assets-provenance.json'), JSON.stringify(prov, null, 2) + '\n');
+  writeFileSync(join(OUT, '.pipeline.json'), JSON.stringify(prevRec, null, 2) + '\n');
+  writeGenerated(saved);
+  process.stdout.write(`bot rebuilt: ${records.map((r) => `${r.path} ${r.bytes}`).join(', ')}\n`);
+}
+
 // ------------------------------------------------------------------ main
 
 async function main() {
   if (process.argv.includes('--generate-only')) {
     writeGenerated(JSON.parse(readFileSync(join(OUT, '.manifest.json'), 'utf8')));
+    return;
+  }
+  if (process.argv.includes('--sky-only')) {
+    await rebuildSkiesOnly();
+    return;
+  }
+  if (process.argv.includes('--bot-only')) {
+    await rebuildBotOnly();
     return;
   }
   mkdirSync(OUT, { recursive: true });

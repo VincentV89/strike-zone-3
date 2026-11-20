@@ -9,3 +9,4 @@ reports/
 .kiro/
 package-lock.json
 tools/asset-pipeline/node_modules
+assets/.manifest.json

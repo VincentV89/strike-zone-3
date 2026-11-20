@@ -1,6 +1,6 @@
 /**
  * Skinned bot characters with a direct track sampler (NFR-G-Q1 = A, TS-G-02,
- * performance-design §3.2). No AnimationMixer, AnimationAction or PropertyBinding: each
+ * performance-design §3.2). None of three's mixer, action or binding classes are used: each
  * clip track is bound to a bone by name once, then sampled with a cached binary search and
  * written straight into the bone's position, quaternion or scale. Lazy kit chunk.
  *
@@ -27,7 +27,15 @@ import type {
   ParsedModel,
 } from './types';
 
-export const CLIPS = ['idle', 'walk', 'run', 'crouch-idle', 'crouch-walk', 'shoot', 'death'] as const;
+export const CLIPS = [
+  'idle',
+  'walk',
+  'run',
+  'crouch-idle',
+  'crouch-walk',
+  'shoot',
+  'death',
+] as const;
 export type ClipName = (typeof CLIPS)[number];
 export const CROSS_FADE_SEC = 0.15;
 const FAR_HALF_RATE_M = 40;
@@ -70,7 +78,10 @@ export function selectClip(f: Readonly<BotFrame>): ClipName {
 }
 
 /** Binds clip tracks ("Bone.quaternion") to indices in `boneNames`; unknown bones are skipped. */
-export function bindClips(clips: readonly AnimationClip[], boneNames: readonly string[]): Map<ClipName, BoundClip> {
+export function bindClips(
+  clips: readonly AnimationClip[],
+  boneNames: readonly string[],
+): Map<ClipName, BoundClip> {
   const out = new Map<ClipName, BoundClip>();
   const index = new Map(boneNames.map((n, i) => [n, i] as const));
   for (const clip of clips) {
@@ -85,7 +96,14 @@ export function bindClips(clips: readonly AnimationClip[], boneNames: readonly s
       const node = track.name.slice(0, dot);
       const p = track.name.slice(dot + 1);
       const b = index.get(node);
-      const kind = p === 'position' ? PROP_POSITION : p === 'quaternion' ? PROP_QUATERNION : p === 'scale' ? PROP_SCALE : -1;
+      const kind =
+        p === 'position'
+          ? PROP_POSITION
+          : p === 'quaternion'
+            ? PROP_QUATERNION
+            : p === 'scale'
+              ? PROP_SCALE
+              : -1;
       if (b === undefined || kind < 0) continue;
       bone.push(b);
       prop.push(kind);
@@ -151,8 +169,14 @@ export function slerpInto(
   t: number,
   out: Float32Array,
 ): void {
-  const ax = a[ao] ?? 0, ay = a[ao + 1] ?? 0, az = a[ao + 2] ?? 0, aw = a[ao + 3] ?? 1;
-  let bx = b[bo] ?? 0, by = b[bo + 1] ?? 0, bz = b[bo + 2] ?? 0, bw = b[bo + 3] ?? 1;
+  const ax = a[ao] ?? 0,
+    ay = a[ao + 1] ?? 0,
+    az = a[ao + 2] ?? 0,
+    aw = a[ao + 3] ?? 1;
+  let bx = b[bo] ?? 0,
+    by = b[bo + 1] ?? 0,
+    bz = b[bo + 2] ?? 0,
+    bw = b[bo + 3] ?? 1;
   let cos = ax * bx + ay * by + az * bz + aw * bw;
   if (cos < 0) {
     cos = -cos;
@@ -169,7 +193,10 @@ export function slerpInto(
     s0 = Math.sin((1 - t) * th) / sin;
     s1 = Math.sin(t * th) / sin;
   }
-  const x = s0 * ax + s1 * bx, y = s0 * ay + s1 * by, z = s0 * az + s1 * bz, w = s0 * aw + s1 * bw;
+  const x = s0 * ax + s1 * bx,
+    y = s0 * ay + s1 * by,
+    z = s0 * az + s1 * bz,
+    w = s0 * aw + s1 * bw;
   const l = Math.hypot(x, y, z, w) || 1;
   out[0] = x / l;
   out[1] = y / l;
@@ -218,7 +245,8 @@ function findLods(root: Object3D, key: string): [SkinnedMesh | null, SkinnedMesh
     if (n === undefined) return null;
     let found: SkinnedMesh | null = null;
     n.traverse((o) => {
-      if (found === null && (o as Partial<SkinnedMesh>).isSkinnedMesh === true) found = o as SkinnedMesh;
+      if (found === null && (o as Partial<SkinnedMesh>).isSkinnedMesh === true)
+        found = o as SkinnedMesh;
     });
     return found;
   };
@@ -236,7 +264,9 @@ export function createCharacterApi(deps: CharacterDeps): CharacterApi {
       for (const c of CLIPS) if (!clips.has(c)) return null;
       const tris = (m: SkinnedMesh): number => {
         const g = m.geometry;
-        return Math.round((g.index !== null ? g.index.count : (g.attributes['position']?.count ?? 0)) / 3);
+        return Math.round(
+          (g.index !== null ? g.index.count : (g.attributes['position']?.count ?? 0)) / 3,
+        );
       };
       const group = new Group();
       group.name = 'bot-characters';
@@ -247,7 +277,9 @@ export function createCharacterApi(deps: CharacterDeps): CharacterApi {
         const lods = findLods(root, entry.key);
         const base = lods[0]?.material as Material | undefined;
         const material =
-          base instanceof MeshStandardMaterial ? base.clone() : new MeshStandardMaterial({ color: 0x777777 });
+          base instanceof MeshStandardMaterial
+            ? base.clone()
+            : new MeshStandardMaterial({ color: 0x777777 });
         for (const m of lods) {
           if (m === null) continue;
           m.material = material;
@@ -287,8 +319,17 @@ export function createCharacterApi(deps: CharacterDeps): CharacterApi {
           const kind = c.prop[i];
           const quat = kind === PROP_QUATERNION;
           const hintAt = i & 255;
-          b.hints[hintAt] = sampleTrack(times, values, quat ? 4 : 3, t, b.hints[hintAt] ?? 0, quat, scratch);
-          const target = kind === PROP_POSITION ? bone.position : kind === PROP_SCALE ? bone.scale : null;
+          b.hints[hintAt] = sampleTrack(
+            times,
+            values,
+            quat ? 4 : 3,
+            t,
+            b.hints[hintAt] ?? 0,
+            quat,
+            scratch,
+          );
+          const target =
+            kind === PROP_POSITION ? bone.position : kind === PROP_SCALE ? bone.scale : null;
           if (quat) {
             const q = bone.quaternion;
             if (w >= 1) q.set(scratch[0] ?? 0, scratch[1] ?? 0, scratch[2] ?? 0, scratch[3] ?? 1);
@@ -301,9 +342,16 @@ export function createCharacterApi(deps: CharacterDeps): CharacterApi {
               q.set(scratchB[0], scratchB[1], scratchB[2], scratchB[3]);
             }
           } else if (target !== null) {
-            const x = scratch[0] ?? 0, y = scratch[1] ?? 0, z = scratch[2] ?? 0;
+            const x = scratch[0] ?? 0,
+              y = scratch[1] ?? 0,
+              z = scratch[2] ?? 0;
             if (w >= 1) target.set(x, y, z);
-            else target.set(target.x + (x - target.x) * w, target.y + (y - target.y) * w, target.z + (z - target.z) * w);
+            else
+              target.set(
+                target.x + (x - target.x) * w,
+                target.y + (y - target.y) * w,
+                target.z + (z - target.z) * w,
+              );
           }
         }
       }
@@ -323,7 +371,16 @@ export function createCharacterApi(deps: CharacterDeps): CharacterApi {
           const dz = f.z - cz;
           const d = Math.sqrt(dx * dx + dz * dz);
           // LOD with ±10 % hysteresis (BR-G-56).
-          const want = lod0Dist <= 0 ? 1 : b.lod === 0 ? (d > lod0Dist * 1.1 ? 1 : 0) : d < lod0Dist * 0.9 ? 0 : 1;
+          const want =
+            lod0Dist <= 0
+              ? 1
+              : b.lod === 0
+                ? d > lod0Dist * 1.1
+                  ? 1
+                  : 0
+                : d < lod0Dist * 0.9
+                  ? 0
+                  : 1;
           if (want !== b.lod) {
             b.lod = want;
             if (b.lods[0] !== null) b.lods[0].visible = want === 0;
@@ -347,8 +404,14 @@ export function createCharacterApi(deps: CharacterDeps): CharacterApi {
             const a = AUTHORED_SPEED[c.name];
             return a > 0 ? Math.min(1.6, Math.max(0.6, f.speed / a)) : 1;
           };
-          if (fade < 1 && prv !== undefined) apply(b, prv, clipTime(prv, tq, b.prevStart, rate(prv)), 1);
-          apply(b, cur, clipTime(cur, tq, b.clipStart, rate(cur)), fade < 1 && prv !== undefined ? fade : 1);
+          if (fade < 1 && prv !== undefined)
+            apply(b, prv, clipTime(prv, tq, b.prevStart, rate(prv)), 1);
+          apply(
+            b,
+            cur,
+            clipTime(cur, tq, b.clipStart, rate(cur)),
+            fade < 1 && prv !== undefined ? fade : 1,
+          );
           if (f.bright !== b.bright || f.flash !== b.flash) {
             b.bright = f.bright;
             b.flash = f.flash;

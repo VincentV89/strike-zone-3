@@ -44,7 +44,6 @@ import {
 } from '../core';
 import type { MapId, PlayerView, SimEvent, SimSnapshot } from '../contracts';
 import type { MapDefinition } from '../maps';
-import { applyPbrSets, attachViewmodel, BOT_KEY, entryOf, VIEWMODEL_KEYS } from './assets/apply';
 import { createAssetLibrary, type AssetLibrary } from './assets/library';
 import type {
   AssetEntry,
@@ -137,6 +136,11 @@ export interface RendererDeps {
 }
 
 const FETCH_POOL = 4;
+/** Viewmodel keys in BotWeaponIndex order (rifle, pistol, sniper). */
+const VIEWMODEL_KEYS = ['vm-rifle', 'vm-pistol', 'vm-sniper'] as const;
+const BOT_KEY = 'bot-soldier';
+const entryOf = (rt: AssetRuntime, key: string): AssetEntry | undefined =>
+  rt.manifest.find((e) => e.key === key);
 const EMPTY_REPORT: AssetLoadReport = Object.freeze({
   requested: 0,
   loaded: 0,
@@ -254,7 +258,9 @@ export function createGameRendererWith(
   // disposeRound; only round objects built from them are disposed.
   const port = deps.assets ?? null;
   const library: AssetLibrary | null =
-    port === null ? null : createAssetLibrary({ port, diagnostics, yieldTask: internals.yieldTask });
+    port === null
+      ? null
+      : createAssetLibrary({ port, diagnostics, yieldTask: internals.yieldTask });
   let runtime: AssetRuntime | null = null;
   let kitFailed = false;
   let kitP: Promise<AssetRuntime | null> | null = null;
@@ -489,7 +495,9 @@ export function createGameRendererWith(
       return mesh;
     };
     const layoutSolids = def.solids.filter((x) => x.prop === undefined);
-    bucketData = buildBuckets(layoutSolids.length === def.solids.length ? def : { ...def, solids: layoutSolids });
+    bucketData = buildBuckets(
+      layoutSolids.length === def.solids.length ? def : { ...def, solids: layoutSolids },
+    );
     buckets = bucketData.map((b) => bucketMesh(b, ''));
     propBuckets = new Map();
     const dress = def.dressing;
@@ -579,7 +587,8 @@ export function createGameRendererWith(
     const repeat = def.materials.find((m) => m.id === first?.material)?.repeatM ?? 8;
     const uv = g.attributes['uv'];
     if (uv !== undefined) {
-      for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * 600) / repeat, (uv.getY(i) * 600) / repeat);
+      for (let i = 0; i < uv.count; i++)
+        uv.setXY(i, (uv.getX(i) * 600) / repeat, (uv.getY(i) * 600) / repeat);
     }
     g.rotateX(-Math.PI / 2);
     g.translate(0, -0.03, 0);
@@ -732,7 +741,8 @@ export function createGameRendererWith(
       let received = 0;
       for (const e of entries) {
         const st = lib.state(e.key);
-        received += st === 'ready' || st === 'failed' ? e.bytes : Math.min(e.bytes, lib.received(e.key));
+        received +=
+          st === 'ready' || st === 'failed' ? e.bytes : Math.min(e.bytes, lib.received(e.key));
       }
       const p = 0.85 * (received / total) + 0.15 * (settled / Math.max(1, entries.length));
       shown = Math.max(shown, Math.min(1, p));
@@ -764,7 +774,15 @@ export function createGameRendererWith(
 
   function entriesForMap(manifest: readonly AssetEntry[], map: MapId): AssetEntry[] {
     const order = (e: AssetEntry): number =>
-      e.kind === 'sky' ? 0 : e.key === BOT_KEY ? 1 : e.key.startsWith('vm-') ? 2 : e.kind === 'model' ? 3 : 4;
+      e.kind === 'sky'
+        ? 0
+        : e.key === BOT_KEY
+          ? 1
+          : e.key.startsWith('vm-')
+            ? 2
+            : e.kind === 'model'
+              ? 3
+              : 4;
     return manifest
       .filter((e) => e.maps === 'all' || e.maps.includes(map))
       .sort((a, b) => order(a) - order(b) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
@@ -781,7 +799,7 @@ export function createGameRendererWith(
     if (rt === null || lib === null || def === null || mapRoot === null || host === null) return;
     disposeAppliedAssets();
     rt.setMaxPx(preset.textureMaxPx, lib);
-    applyPbrSets(def, mapMaterials, rt, lib);
+    rt.applyPbrSets(def, mapMaterials, lib);
     applyAtmosphere(def, rt, lib);
     applyViewmodels(rt, lib);
     const bot = entryOf(rt, BOT_KEY);
@@ -798,9 +816,12 @@ export function createGameRendererWith(
     const skyKey = `sky-${atm.sky}`;
     const sky = rt.texture(skyKey, lib);
     if (sky === null) return; // flat background and linear fog stay (BR-G-14)
-    worldScene.background = sky;
-    worldScene.backgroundRotation.set(0, atm.skyRotation, 0);
     const env = rt.environment(skyKey, lib);
+    // Compressed equirect textures do not convert to a background cube in three 0.187, so the
+    // PMREM environment (cube UV) is the background too (BR-G-60); blurriness 0 keeps detail.
+    worldScene.background = env ?? background;
+    worldScene.backgroundBlurriness = 0;
+    worldScene.backgroundRotation.set(0, atm.skyRotation, 0);
     worldScene.environment = env;
     worldScene.environmentIntensity = atm.envIntensity;
     worldScene.environmentRotation.set(0, atm.skyRotation, 0);
@@ -809,7 +830,8 @@ export function createGameRendererWith(
     worldScene.fog = fogExp2;
     host?.setExposure(atm.exposure);
     if (mapLights !== null) {
-      mapLights.hemi.intensity = def.lighting.hemiIntensity * (env !== null ? atm.hemiScaleWithEnv : 1);
+      mapLights.hemi.intensity =
+        def.lighting.hemiIntensity * (env !== null ? atm.hemiScaleWithEnv : 1);
       mapLights.sun.intensity = def.lighting.sunIntensity * atm.sunScale;
     }
     atmosphereOn = true;
@@ -826,7 +848,8 @@ export function createGameRendererWith(
       const model = lib.model(key);
       if (wr === undefined || entry === undefined || model === null) return;
       const boxes = wr.group.children.filter((c) => c instanceof Mesh);
-      if (attachViewmodel(wr.group, boxes, wr.muzzle, model.root, entry, rt, lib)) vmAttached[i] = true;
+      if (rt.attachViewmodel(wr.group, boxes, wr.muzzle, model.root, entry, lib))
+        vmAttached[i] = true;
     });
   }
 
@@ -973,7 +996,13 @@ export function createGameRendererWith(
       characters.setQuality(p.botLodDistanceM, p.botAnimHz, reducedMotion);
       setRigLayer(true);
     }
-    if (dressing !== null && dressingPreset !== p.id && currentDef !== null && runtime !== null && library !== null) {
+    if (
+      dressing !== null &&
+      dressingPreset !== p.id &&
+      currentDef !== null &&
+      runtime !== null &&
+      library !== null
+    ) {
       dressing.group.removeFromParent();
       dressing.dispose();
       dressing = null;

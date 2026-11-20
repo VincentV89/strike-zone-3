@@ -45,13 +45,15 @@ const round = (over: Partial<RoundStats> = {}): RoundStats => ({
 });
 
 describe('view models', () => {
-  it('loading rows keep order and labels, and complete only when all four are done', () => {
+  it('loading rows keep order and labels, and complete only when all five are done', () => {
     const p = createLoadingProgress();
     const vm = loadingVM(p, null);
-    expect(vm.steps.map((s) => s.id)).toEqual(['map', 'nav', 'bots', 'shaders']);
+    expect(vm.steps.map((s) => s.id)).toEqual(['map', 'nav', 'assets', 'bots', 'shaders']);
     expect(vm.steps[0]?.label).toBe('Map geometry');
+    expect(vm.steps[2]?.label).toBe('Assets');
     p.map = { progress: 1, state: 'done' };
     p.nav = { progress: 1, state: 'done' };
+    p.assets = { progress: 1, state: 'done' };
     p.bots = { progress: 1, state: 'done' };
     expect(loadingComplete(p)).toBe(false);
     p.shaders = { progress: 1, state: 'done' };

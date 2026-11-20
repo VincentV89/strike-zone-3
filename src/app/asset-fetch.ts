@@ -16,6 +16,8 @@ export const POOL_SIZE = 4;
 export const MAX_ASSET_BYTES = 8 * 1024 * 1024;
 const RETRY_BASE_MS = 500;
 const RETRY_JITTER = 251;
+/** Redirects fail the fetch (V0): every asset is a direct same-origin file. */
+const NO_REDIRECT: RequestRedirect = 'error';
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
 /** Resolves after `ms`; the timer lives in src/app/scope.ts (SD-AS-06). */
@@ -97,10 +99,19 @@ export function createAssetFetch(deps: AssetFetchDeps): AssetPort['fetchBytes'] 
     if (next !== undefined) next();
   }
 
-  async function once(url: string, signal: AbortSignal, onBytes: (n: number) => void): Promise<Uint8Array> {
+  async function once(
+    url: string,
+    signal: AbortSignal,
+    onBytes: (n: number) => void,
+  ): Promise<Uint8Array> {
     let res: Response;
     try {
-      res = await deps.fetch(url, { signal, credentials: 'same-origin', redirect: 'error', cache: 'default' });
+      res = await deps.fetch(url, {
+        signal,
+        credentials: 'same-origin',
+        redirect: NO_REDIRECT,
+        cache: 'default',
+      });
     } catch (err) {
       if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) throw abortError();
       throw new FetchFailure('network', true);
@@ -110,11 +121,17 @@ export function createAssetFetch(deps: AssetFetchDeps): AssetPort['fetchBytes'] 
     }
     const type = (res.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? '';
     const want = EXPECTED_TYPE.find(([re]) => re.test(pathOf(url)))?.[1];
-    if (type === 'text/html' || (want !== undefined && type !== '' && type !== want && type !== 'application/octet-stream')) {
+    if (
+      type === 'text/html' ||
+      (want !== undefined && type !== '' && type !== want && type !== 'application/octet-stream')
+    ) {
       throw new FetchFailure('type', false);
     }
     const lengthHeader = Number(res.headers.get('content-length') ?? NaN);
-    const cap = Number.isFinite(lengthHeader) && lengthHeader > 0 ? Math.min(MAX_ASSET_BYTES, Math.ceil(lengthHeader * 1.1)) : MAX_ASSET_BYTES;
+    const cap =
+      Number.isFinite(lengthHeader) && lengthHeader > 0
+        ? Math.min(MAX_ASSET_BYTES, Math.ceil(lengthHeader * 1.1))
+        : MAX_ASSET_BYTES;
     const body = res.body;
     if (body === null) {
       const buf = new Uint8Array(await res.arrayBuffer());

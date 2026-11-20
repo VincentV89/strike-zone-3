@@ -25,13 +25,21 @@ import { checkGlb, checkKtx2, codedError } from './glb-check';
 import { MANIFEST } from './manifest';
 import { createRuntimeCore, type RuntimePlatform } from './runtime';
 import { TEXTURE_SETS } from './texture-sets';
-import type { AssetEntry, AssetRuntime, ParsedAsset, ParsedModel, ParsedTexture, RuntimeDeps } from './types';
+import type {
+  AssetEntry,
+  AssetRuntime,
+  ParsedAsset,
+  ParsedModel,
+  ParsedTexture,
+  RuntimeDeps,
+} from './types';
 
 const KTX2_WORKERS = 2;
 
 function exactBuffer(bytes: Uint8Array): ArrayBuffer {
   const b = bytes.buffer;
-  if (b instanceof ArrayBuffer && bytes.byteOffset === 0 && bytes.byteLength === b.byteLength) return b;
+  if (b instanceof ArrayBuffer && bytes.byteOffset === 0 && bytes.byteLength === b.byteLength)
+    return b;
   return bytes.slice().buffer;
 }
 
@@ -56,9 +64,14 @@ function lodTriangles(root: Object3D, lodSuffix: string | null): number {
 }
 
 /** V4 semantic checks (BR-G-07, performance-design §3.2). */
-function validateModel(entry: AssetEntry, root: Object3D, clips: readonly { name: string }[]): void {
+function validateModel(
+  entry: AssetEntry,
+  root: Object3D,
+  clips: readonly { name: string }[],
+): void {
   const invalid = codedError('render/asset-invalid');
-  for (const n of entry.requiredNodes ?? []) if (root.getObjectByName(n) === undefined) throw invalid;
+  for (const n of entry.requiredNodes ?? [])
+    if (root.getObjectByName(n) === undefined) throw invalid;
   for (const c of entry.requiredClips ?? []) if (!clips.some((x) => x.name === c)) throw invalid;
   const isPack = (entry.requiredNodes ?? []).some((n) => n.endsWith('_LOD0'));
   const lod0 = lodTriangles(root, isPack ? '_LOD0' : null);
@@ -109,7 +122,12 @@ export function createAssetRuntime(deps: RuntimeDeps): AssetRuntime {
     });
     for (const c of colliders) c.removeFromParent();
     validateModel(entry, root, result.animations);
-    return { kind: 'model', root, animations: result.animations, triangles: lodTriangles(root, null) };
+    return {
+      kind: 'model',
+      root,
+      animations: result.animations,
+      triangles: lodTriangles(root, null),
+    };
   }
 
   async function parseTexture(entry: AssetEntry, bytes: Uint8Array): Promise<ParsedTexture> {
@@ -118,14 +136,22 @@ export function createAssetRuntime(deps: RuntimeDeps): AssetRuntime {
     let tex: CompressedTexture;
     try {
       tex = await new Promise<CompressedTexture>((resolve, reject) => {
-        ktx2.parse(exactBuffer(bytes), (t) => {
-          resolve(t);
-        }, reject);
+        ktx2.parse(
+          exactBuffer(bytes),
+          (t) => {
+            resolve(t);
+          },
+          reject,
+        );
       });
     } catch {
       throw codedError('render/asset-decode-failed');
     }
-    const mips = tex.mipmaps as unknown as { data: ArrayBufferView; width: number; height: number }[];
+    const mips = tex.mipmaps as unknown as {
+      data: ArrayBufferView;
+      width: number;
+      height: number;
+    }[];
     const srgb = tex.colorSpace === 'srgb';
     if (mips.length !== header.levels || srgb !== (entry.colour === 'srgb')) {
       tex.dispose();

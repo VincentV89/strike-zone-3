@@ -31,7 +31,9 @@ function deps(over: Partial<LoaderDeps> = {}) {
     now: () => 0,
     diag,
     onProgress: (p) => {
-      progress.push(p.map.progress + p.nav.progress + p.bots.progress + p.shaders.progress);
+      progress.push(
+        p.map.progress + p.nav.progress + p.assets.progress + p.bots.progress + p.shaders.progress,
+      );
     },
     ...over,
   };
@@ -39,17 +41,60 @@ function deps(over: Partial<LoaderDeps> = {}) {
 }
 
 describe('loader', () => {
-  it('runs map, nav, bots and shaders with monotonic progress', async () => {
+  it('runs map, nav, assets, bots and shaders with monotonic progress', async () => {
     const { d, renderer, progress } = deps();
     const loader = createLoader(d);
     const o = await loader.run('desert-compound', 'map', new AbortController().signal);
     expect(o.kind).toBe('done');
-    expect(renderer.calls).toEqual(['buildMap', 'spawnActors:5', 'precompile']);
+    // Downloads start before the map group and are applied before spawnActors (BR-G-09).
+    expect(renderer.calls).toEqual([
+      'loadAssets',
+      'buildMap',
+      'applyAssets',
+      'spawnActors:5',
+      'precompile',
+    ]);
     for (let i = 1; i < progress.length; i++) {
       expect(progress[i]).toBeGreaterThanOrEqual((progress[i - 1] ?? 0) - 1e-9);
     }
-    expect(progress.at(-1)).toBe(4);
-    expect(progress.slice(0, -1).every((p) => p < 4)).toBe(true);
+    expect(progress.at(-1)).toBe(5);
+    expect(progress.slice(0, -1).every((p) => p < 5)).toBe(true);
+  });
+
+  it('reports assets as the current step while it waits for downloads (BR-G-14a)', async () => {
+    const { d, renderer } = deps();
+    let open = (): void => undefined;
+    renderer.assetsGate = new Promise<void>((r) => {
+      open = r;
+    });
+    const loader = createLoader(d);
+    const run = loader.run('desert-compound', 'map', new AbortController().signal);
+    await expect.poll(() => loader.current(), { timeout: 30_000 }).toBe('assets');
+    expect(loader.progress().assets.state).toBe('running');
+    open();
+    expect((await run).kind).toBe('done');
+    expect(loader.progress().assets.state).toBe('done');
+  });
+
+  it('an unexpected applyAssets fault fails the assets step; retry rebuilds from map', async () => {
+    const { d, renderer } = deps();
+    renderer.failNext.applyAssets = true;
+    const loader = createLoader(d);
+    const o = await loader.run('desert-compound', 'map', new AbortController().signal);
+    expect(o).toMatchObject({ kind: 'failed', step: 'assets' });
+    const again = await loader.run('desert-compound', 'map', new AbortController().signal);
+    expect(again.kind).toBe('done');
+    expect(renderer.calls.filter((c) => c === 'applyAssets')).toHaveLength(2);
+  });
+
+  it('a retry from bots or shaders does not re-apply assets', async () => {
+    const { d, renderer } = deps();
+    renderer.failNext.precompile = true;
+    const loader = createLoader(d);
+    await loader.run('desert-compound', 'map', new AbortController().signal);
+    await loader.run('desert-compound', 'shaders', new AbortController().signal);
+    expect(renderer.calls.filter((c) => c === 'applyAssets')).toHaveLength(1);
+    expect(renderer.calls.filter((c) => c === 'loadAssets')).toHaveLength(1);
   });
 
   it('retry from shaders keeps the built map and session', async () => {
