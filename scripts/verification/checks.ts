@@ -1004,7 +1004,7 @@ export const LIMITATIONS: readonly KnownLimitation[] = [
   },
   {
     id: 'KL-02',
-    text: 'On the Industrial Warehouse a bot can stay stuck for more than 5 s (bot-ai harness worst span 720 ticks against 300). The cause is a collision-nav defect: sweepClear accepts segments at ramp sides that moveCapsule blocks, and only the watchdog snap frees the bot. No bot stays stuck unresolved.',
+    text: 'On the Industrial Warehouse a bot can stay stuck for more than 5 s (bot-ai harness worst span 540 ticks against 300; it was 720 before the graphics uplift added prop colliders). The cause is a collision-nav defect: sweepClear accepts segments at ramp sides that moveCapsule blocks, and only the watchdog snap frees the bot. No bot stays stuck unresolved.',
     relatesTo: ['GV-15m', 'req-bot-navigation'],
   },
   {
@@ -1073,7 +1073,7 @@ export const LIMITATIONS: readonly KnownLimitation[] = [
   },
   {
     id: 'KL-14',
-    text: 'The entry chunk is 204,127 B brotli against the 204,800 B check:seams limit (673 B headroom); asset code that runs after the kit loads lives in the lazy kit chunk (about 47 KB brotli, 173 KB minified, over the 150 KB reported target and under the 2x ceiling). Screenshot sign-off against the reference image (MT-G1) and the 60 FPS cells on GTX 1660 / RX 580 class hardware (MT-G2, MT-G3) are manual and not recorded yet.',
+    text: 'The entry chunk is 204,218 B brotli against the 204,800 B check:seams limit (582 B headroom); asset code that runs after the kit loads lives in the lazy kit chunk (47,749 B brotli, 174,296 B minified, over the 150 KB reported target and under the 2x ceiling). Screenshot sign-off against the reference image (MT-G1) and the 60 FPS cells on GTX 1660 / RX 580 class hardware (MT-G2, MT-G3) are manual and not recorded yet.',
     relatesTo: [
       'req-gfx-download-budget',
       'req-gfx-visual-signoff',
