@@ -11,6 +11,7 @@ import {
   DEPLOY_MEMORY_MB,
   INDEX_CACHE_CONTROL,
 } from '../../infra/lib/strikezone-stack.ts';
+import { BINARY_ASSET_KINDS } from '../../scripts/verification/smoke-checks.ts';
 import {
   dependsOn,
   FIXTURE_DIR,
@@ -84,6 +85,12 @@ describe('ordered, non-pruning publish (T-H-7)', () => {
       });
       expect(p).not.toHaveProperty('DistributionId');
     }
+  });
+
+  it('SM-4c expects exactly the published binary content types', () => {
+    expect(BINARY_ASSET_KINDS.map((k) => [`*${k.ext}`, k.contentType])).toEqual(
+      BINARY_TYPES.map((t) => [t.pattern, t.contentType]),
+    );
   });
 
   it('ID-G-02 the include/exclude lists partition every published extension', () => {

@@ -165,7 +165,7 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Play: $url" >> "$GITHUB_STEP_SUMMARY"
           echo "Commit: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
-      - name: Header smoke (SM-1..SM-9)
+      - name: Header and asset smoke (SM-1..SM-9, SM-4c on the downloaded dist/)
         run: |
           npm run smoke -- --precheck
           npm run smoke

@@ -120,6 +120,7 @@ const SMOKE_IDS = new Set<string>([
   'SM-3',
   'SM-4',
   'SM-4b',
+  'SM-4c',
   'SM-5',
   'SM-6',
   'SM-7',

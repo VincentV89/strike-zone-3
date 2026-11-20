@@ -1,7 +1,8 @@
 /**
- * Post-deploy smoke checks SM-1..SM-9 and SM-4b (monitoring-design-hosting-infra,
- * business-logic-model-verification Flow V6, SD-VE-05). Every URL is built
- * from the validated outputs plus fixed paths; requests carry no credentials.
+ * Post-deploy smoke checks SM-1..SM-9, SM-4b and SM-4c (monitoring-design-hosting-infra,
+ * business-logic-model-verification Flow V6, SD-VE-05, monitoring-design-graphics-uplift).
+ * Every URL is built from the validated outputs plus fixed paths; requests carry
+ * no credentials.
  */
 import { describeStackCall, parseStackStatus, type AwsCall, type AwsRun } from './aws.ts';
 import type { DeployOutputs, SmokeCheckResult, SmokeId } from './types.ts';
@@ -10,6 +11,8 @@ export interface FetchResponseLike {
   readonly status: number;
   readonly headers: { get(name: string): string | null };
   text(): Promise<string>;
+  /** Raw body bytes; SM-4c needs it. Node's fetch Response provides it. */
+  arrayBuffer?(): Promise<ArrayBuffer>;
 }
 
 export interface FetchInitLike {
@@ -42,12 +45,61 @@ export interface SmokeTarget {
   readonly expected: ExpectedHeaders;
   /** Content of reports/redeploy.log, or null when it does not exist (SM-8). */
   readonly redeployLog: string | null;
+  /**
+   * Binary assets of the local verified dist/assets (SM-4c), or null when
+   * dist/ is absent. Absent or null means SM-4c is not verified.
+   */
+  readonly binaryAssets?: readonly LocalBinaryAsset[] | null;
+}
+
+/** A hashed binary asset of the verified bundle: its URL path and byte size. */
+export interface LocalBinaryAsset {
+  readonly path: string;
+  readonly size: number;
+}
+
+/**
+ * The served type and leading bytes of each binary asset kind. The types must
+ * equal BINARY_TYPES in infra/lib/strikezone-stack.ts (tests/infra keeps them
+ * equal); this file may not import infra (BR-VE-47).
+ */
+export const BINARY_ASSET_KINDS: readonly {
+  readonly ext: string;
+  readonly contentType: string;
+  readonly magic: readonly number[];
+}[] = Object.freeze([
+  { ext: '.glb', contentType: 'model/gltf-binary', magic: [0x67, 0x6c, 0x54, 0x46] },
+  {
+    ext: '.ktx2',
+    contentType: 'image/ktx2',
+    magic: [0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a],
+  },
+  { ext: '.wasm', contentType: 'application/wasm', magic: [0x00, 0x61, 0x73, 0x6d] },
+]);
+
+const kindOf = (name: string): (typeof BINARY_ASSET_KINDS)[number] | undefined =>
+  BINARY_ASSET_KINDS.find((k) => name.endsWith(k.ext));
+
+/** Picks the binary assets (by extension, safe names only) from a dist/assets listing. */
+export function binaryAssetsOf(
+  entries: readonly { readonly name: string; readonly size: number }[],
+): LocalBinaryAsset[] {
+  return entries
+    .filter((e) => /^[A-Za-z0-9._-]+$/.test(e.name) && kindOf(e.name) !== undefined)
+    .map((e) => ({ path: `/assets/${e.name}`, size: e.size }))
+    .sort((a, b) => (a.path < b.path ? -1 : 1));
 }
 
 interface Got {
   readonly status: number;
   readonly header: (name: string) => string;
   readonly body: string;
+}
+
+export interface GotBytes {
+  readonly status: number;
+  readonly header: (name: string) => string;
+  readonly bytes: Uint8Array | null;
 }
 
 const IMMUTABLE = 'public, max-age=31536000, immutable';
@@ -69,6 +121,33 @@ async function get(
   });
   const body = await res.text();
   return { status: res.status, header: (n) => (res.headers.get(n) ?? '').trim(), body };
+}
+
+async function getBytes(deps: SmokeDeps, url: string): Promise<GotBytes> {
+  const res = await deps.fetch(url, {
+    method: 'GET',
+    redirect: 'manual',
+    credentials: 'omit',
+    signal: AbortSignal.timeout(deps.timeoutMs ?? 10_000),
+  });
+  const bytes = res.arrayBuffer === undefined ? null : new Uint8Array(await res.arrayBuffer());
+  return { status: res.status, header: (n) => (res.headers.get(n) ?? '').trim(), bytes };
+}
+
+/** Why one served binary asset is wrong, or null when it is right (SM-4c). */
+export function binaryAssetProblem(asset: LocalBinaryAsset, r: GotBytes): string | null {
+  const kind = kindOf(asset.path);
+  if (kind === undefined) return 'unknown kind';
+  if (r.status !== 200) return String(r.status);
+  const type = r.header('content-type');
+  if (type !== kind.contentType) return `content-type ${type === '' ? 'none' : type}`;
+  if (r.header('cache-control') !== IMMUTABLE) return 'cache-control';
+  if (r.header('x-content-type-options') !== 'nosniff') return 'nosniff';
+  if (r.bytes === null) return 'no body bytes';
+  if (r.bytes.byteLength !== asset.size)
+    return `length ${String(r.bytes.byteLength)} != ${String(asset.size)}`;
+  if (!kind.magic.every((b, i) => r.bytes?.[i] === b)) return 'magic bytes';
+  return null;
 }
 
 type CheckFn = () => Promise<{ pass: boolean; observed: string; notVerified?: true }>;
@@ -233,6 +312,34 @@ export async function runSmokeChecks(
     },
   );
 
+  await add(
+    'SM-4c',
+    'GET every .glb, .ktx2 and .wasm of the local verified dist/assets',
+    '200, exact content-type, immutable, nosniff, local length, magic bytes',
+    async () => {
+      const list = target.binaryAssets;
+      if (list === undefined || list === null)
+        return {
+          pass: false,
+          observed: 'not verified: local dist/assets absent',
+          notVerified: true as const,
+        };
+      if (list.length === 0) return { pass: false, observed: 'no binary asset in dist/assets' };
+      const bad: string[] = [];
+      for (const a of list) {
+        const problem = binaryAssetProblem(a, await getBytes(deps, `${origin}${a.path}`));
+        if (problem !== null) bad.push(`${a.path} ${problem}`);
+      }
+      return {
+        pass: bad.length === 0,
+        observed:
+          bad.length === 0
+            ? `${String(list.length)} binary assets ok`
+            : `${String(bad.length)} wrong: ${bad.slice(0, 5).join(', ')}`,
+      };
+    },
+  );
+
   await add('SM-5', `GET ${origin}${DEEP_ROUTE}`, '200, same body as SM-2', async () => {
     const r = await get(deps, `${origin}${DEEP_ROUTE}`);
     return {
@@ -301,13 +408,14 @@ export async function runSmokeChecks(
   return out;
 }
 
-/** "Deployed and verified" needs SM-1..SM-7, SM-4b and SM-9 (BR-VE-45). */
+/** "Deployed and verified" needs SM-1..SM-7, SM-4b, SM-4c and SM-9 (BR-VE-45). */
 export const VERIFIED_SET: readonly SmokeId[] = [
   'SM-1',
   'SM-2',
   'SM-3',
   'SM-4',
   'SM-4b',
+  'SM-4c',
   'SM-5',
   'SM-6',
   'SM-7',

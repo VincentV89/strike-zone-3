@@ -4,7 +4,9 @@
  * E2E-01 load, E2E-02 one round reaches an outcome, E2E-03 Play Again
  * without a reload, E2E-04 zero page errors and console errors, on both maps
  * with seed 42 and 5 bots. E2E-05 opens the deployed URL (no seams) when
- * reports/cdk-outputs.json exists. Results go to reports/e2e.json.
+ * reports/cdk-outputs.json exists. Results go to reports/e2e.json, and one
+ * live-round screenshot per map goes to reports/playwright/signoff-<map>.png
+ * for the manual visual sign-off (CI uploads reports/playwright/).
  *
  * WebGL here is SwiftShader: no frame rate from this run is ever reported.
  */
@@ -121,6 +123,9 @@ for (const map of MAPS) {
       expect(rs['envActive']).toBe(true);
       expect(rs['skinnedBots']).toBe(5);
       expect(rs['textureFormats']).not.toContain(RGBA_FORMAT);
+      // Sign-off evidence for review against the reference image
+      // (req-gfx-visual-signoff). SwiftShader render: never a pass/fail gate.
+      await page.screenshot({ path: `reports/playwright/signoff-${map}.png` });
       // The default round is 180 s (10,800 ticks), so 11,400 ticks always end it.
       for (let i = 0; i < 19 && !['eliminated', 'end'].includes(await state(page)); i++) {
         await fastForward(page, 600);

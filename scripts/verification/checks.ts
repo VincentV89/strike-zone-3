@@ -657,7 +657,7 @@ export const CHECKS: readonly Check[] = [
     source: '§13-deployment',
     stories: ['story-post-deploy-smoke'],
     requirements: ['req-deploy-verification'],
-    refs: [sm('SM-4'), sm('SM-4b'), sm('SM-7')],
+    refs: [sm('SM-4'), sm('SM-4b'), sm('SM-4c'), sm('SM-7')],
   },
   {
     id: 'DV-03',

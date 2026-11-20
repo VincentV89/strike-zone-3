@@ -9,7 +9,17 @@ export type CheckSource =
 export type ManualId = 'MT-01' | 'MT-02' | 'MT-03' | 'MT-04' | 'MT-05' | 'MT-06' | 'MT-07';
 export type E2eId = 'E2E-01' | 'E2E-02' | 'E2E-03' | 'E2E-04' | 'E2E-05';
 export type SmokeId =
-  'SM-1' | 'SM-2' | 'SM-3' | 'SM-4' | 'SM-4b' | 'SM-5' | 'SM-6' | 'SM-7' | 'SM-8' | 'SM-9';
+  | 'SM-1'
+  | 'SM-2'
+  | 'SM-3'
+  | 'SM-4'
+  | 'SM-4b'
+  | 'SM-4c'
+  | 'SM-5'
+  | 'SM-6'
+  | 'SM-7'
+  | 'SM-8'
+  | 'SM-9';
 
 export interface TestRef {
   readonly kind: 'test';
