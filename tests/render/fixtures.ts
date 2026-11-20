@@ -26,6 +26,7 @@ export interface FakeHost extends GlHost {
   /** When false, frame calls are not recorded (allocation probe). */
   recording: boolean;
   dpr: number;
+  exposure: number;
   loseContext(): void;
   restoreContext(): void;
   /** Scenes passed to the most recent render() pair. */
@@ -99,6 +100,14 @@ export function createFakeHost(
       restored.add(cb);
       return () => restored.delete(cb);
     },
+    bindKit(kit) {
+      calls.push('bindKit');
+      kit.bind({ renderer: host });
+    },
+    setExposure(x) {
+      host.exposure = x;
+    },
+    exposure: 1,
     dispose() {
       calls.push('dispose');
     },

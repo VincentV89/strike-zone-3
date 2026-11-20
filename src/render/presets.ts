@@ -27,6 +27,32 @@ export interface PresetSpec {
   readonly decalCap: number;
   readonly tracerCap: number;
   readonly flashLight: boolean;
+  // Graphics uplift (domain-entities-graphics-uplift "PresetSpec additions").
+  /** Share of optional dressing kept (scatter and backdrop); authored props always stay. */
+  readonly dressingDensity: number;
+  /** Dressing instance cap (BR-G-75). */
+  readonly dressingCap: number;
+  /** Scatter draw distance (m). */
+  readonly dressingDistanceM: number;
+  /** Props switch to LOD1 beyond this distance (m). */
+  readonly propLodDistanceM: number;
+  /** Bots use LOD0 within this distance; 0 = always LOD1. */
+  readonly botLodDistanceM: number;
+  /** Bot animation sample rate (Hz), halved beyond 40 m. */
+  readonly botAnimHz: number;
+  /** Bot shadow casters via the 9-part proxy rig on the shadow-only layer (0 = no bot shadows). */
+  readonly botShadowCasters: number;
+  /** Near-camera detail layer (BR-G-71). Cut by the agreed cut order, so off everywhere. */
+  readonly detailLayer: boolean;
+  /** Largest uploaded mip (BR-G-43); higher mips are dropped at upload. */
+  readonly textureMaxPx: number;
+  /** World-pass ceilings (BR-G-73, FD-G-Q4). */
+  readonly worldDrawCallCeiling: number;
+  readonly triangleCeiling: number;
+  /** Dressing batch sub-cap (BR-G-73). */
+  readonly dressingBatchCap: number;
+  /** GPU texture budget, MB (BR-G-72). */
+  readonly textureBudgetMB: number;
 }
 
 function preset(spec: PresetSpec): PresetSpec {
@@ -50,6 +76,19 @@ export const PRESETS: Readonly<Record<PresetId, PresetSpec>> = Object.freeze({
     decalCap: 32,
     tracerCap: 16,
     flashLight: false,
+    dressingDensity: 0.35,
+    dressingCap: 1500,
+    dressingDistanceM: 45,
+    propLodDistanceM: 15,
+    botLodDistanceM: 0,
+    botAnimHz: 15,
+    botShadowCasters: 0,
+    detailLayer: false,
+    textureMaxPx: 1024,
+    worldDrawCallCeiling: 80,
+    triangleCeiling: 300_000,
+    dressingBatchCap: 24,
+    textureBudgetMB: 160,
   }),
   medium: preset({
     id: 'medium',
@@ -67,6 +106,19 @@ export const PRESETS: Readonly<Record<PresetId, PresetSpec>> = Object.freeze({
     decalCap: 64,
     tracerCap: 32,
     flashLight: false,
+    dressingDensity: 0.7,
+    dressingCap: 4000,
+    dressingDistanceM: 70,
+    propLodDistanceM: 25,
+    botLodDistanceM: 25,
+    botAnimHz: 30,
+    botShadowCasters: 20,
+    detailLayer: false,
+    textureMaxPx: 2048,
+    worldDrawCallCeiling: 100,
+    triangleCeiling: 600_000,
+    dressingBatchCap: 40,
+    textureBudgetMB: 320,
   }),
   high: preset({
     id: 'high',
@@ -76,7 +128,7 @@ export const PRESETS: Readonly<Record<PresetId, PresetSpec>> = Object.freeze({
     shadowRadius: 2,
     localShadowLights: 2,
     botsCastShadows: true,
-    maxShadowCasters: 24,
+    maxShadowCasters: 32,
     anisotropy: 8,
     farM: 300,
     particleCap: 384,
@@ -84,6 +136,19 @@ export const PRESETS: Readonly<Record<PresetId, PresetSpec>> = Object.freeze({
     decalCap: 128,
     tracerCap: 48,
     flashLight: true,
+    dressingDensity: 1,
+    dressingCap: 8000,
+    dressingDistanceM: 100,
+    propLodDistanceM: 40,
+    botLodDistanceM: 40,
+    botAnimHz: 60,
+    botShadowCasters: 20,
+    detailLayer: false,
+    textureMaxPx: 2048,
+    worldDrawCallCeiling: 120,
+    triangleCeiling: 1_000_000,
+    dressingBatchCap: 56,
+    textureBudgetMB: 512,
   }),
 });
 

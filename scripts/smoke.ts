@@ -6,7 +6,7 @@
  * copies (BR-VE-47), so aws-cdk-lib loads only in this real run.
  */
 import { setTimeout as sleep } from 'node:timers/promises';
-import { CSP, PERMISSIONS_POLICY } from '../infra/lib/headers.ts';
+import { CSP, PERMISSIONS_POLICY } from '../infra/lib/policy.ts';
 import { runAws } from './verification/aws.ts';
 import {
   runPrecheckCommand,

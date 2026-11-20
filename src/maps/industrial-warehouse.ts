@@ -23,6 +23,7 @@ import {
   wallAlongZ,
   yawToward,
 } from './build';
+import { dressing, propSolids } from './props';
 import type {
   CoverPoint,
   LocalLight,
@@ -33,6 +34,9 @@ import type {
   Ramp,
   Solid,
   SpawnPoint,
+  BackdropItem,
+  PropPlacement,
+  ScatterRegion,
 } from './types';
 
 const HX = 44;
@@ -239,6 +243,7 @@ const materials: MaterialHint[] = [
     roughness: 0.9,
     metalness: 0,
     repeatM: 4,
+    pbr: 'concrete-floor',
   },
   {
     id: 'concrete-wall',
@@ -248,6 +253,7 @@ const materials: MaterialHint[] = [
     roughness: 0.9,
     metalness: 0,
     repeatM: 3,
+    pbr: 'concrete',
   },
   {
     id: 'roof-metal',
@@ -257,6 +263,7 @@ const materials: MaterialHint[] = [
     roughness: 0.5,
     metalness: 0.7,
     repeatM: 2,
+    pbr: 'corrugated',
   },
   {
     id: 'container-red',
@@ -266,6 +273,8 @@ const materials: MaterialHint[] = [
     roughness: 0.6,
     metalness: 0.5,
     repeatM: 1.2,
+    pbr: 'corrugated',
+    pbrTint: true,
   },
   {
     id: 'container-blue',
@@ -275,6 +284,8 @@ const materials: MaterialHint[] = [
     roughness: 0.6,
     metalness: 0.5,
     repeatM: 1.2,
+    pbr: 'corrugated',
+    pbrTint: true,
   },
   {
     id: 'container-green',
@@ -284,6 +295,8 @@ const materials: MaterialHint[] = [
     roughness: 0.6,
     metalness: 0.5,
     repeatM: 1.2,
+    pbr: 'corrugated',
+    pbrTint: true,
   },
   {
     id: 'container-orange',
@@ -293,6 +306,8 @@ const materials: MaterialHint[] = [
     roughness: 0.6,
     metalness: 0.5,
     repeatM: 1.2,
+    pbr: 'corrugated',
+    pbrTint: true,
   },
   {
     id: 'steel',
@@ -302,6 +317,7 @@ const materials: MaterialHint[] = [
     roughness: 0.45,
     metalness: 0.85,
     repeatM: 1,
+    pbr: 'rust-metal',
   },
   {
     id: 'wood',
@@ -311,6 +327,7 @@ const materials: MaterialHint[] = [
     roughness: 0.8,
     metalness: 0,
     repeatM: 1.25,
+    pbr: 'wood-planks',
   },
   {
     id: 'hazard',
@@ -323,6 +340,99 @@ const materials: MaterialHint[] = [
   },
 ];
 
+// Graphics uplift dressing (BR-G-20..35). Blocking props sit at least 3 m from spawns,
+// cover points, hints and ramps, in open ground, so no route narrows below 2 m.
+const PROPS: PropPlacement[] = [
+  ['road-barrier', -4, 0, -12, 0, 1],
+  ['utility-box', 39, 0, -8, 2, 1.2],
+  ['utility-box', -39, 0, -8, 2, 1.2],
+  ['barrel-blue', 12, 0, -27, 0, 1.1],
+  ['generator', -12, 0, -27, 1, 1.3],
+  ['road-barrier', 11, 0, -12, 0, 1],
+  ['barrel-rusty', -12, 0, -17, 0, 1.1],
+  ['crate-military', -4, 0, -27, 0, 1.3],
+  ['barrel-blue', 4, 0, -27, 0, 1.1],
+  ['generator', 10, 0, -16, 0, 1.3],
+  ['cardboard-box', -25.2, 0, -9.3, 0, 1],
+  ['propane-tank', -9, 0, -9.3, 1, 1],
+  ['wheel-rim', 9, 0, -9.3, 2, 1],
+  ['tyre-old', 25.3, 0, -9.3, 3, 1],
+  ['cardboard-box', 16, 0, 27.3, 0, 1],
+  ['propane-tank', -30.2, 0, 26.8, 1, 1],
+  ['cardboard-box', 30.3, 0, 26.8, 2, 1],
+  ['propane-tank', -38, 0, -4.8, 3, 1],
+  ['wheel-rim', 38, 0, -4.8, 0, 1],
+  ['tyre-old', -38, 0, 26.8, 1, 1],
+  ['cardboard-box', 38, 0, 26.8, 2, 1],
+  ['propane-tank', -36, 0, -12.2, 3, 1],
+  ['cardboard-box', 36, 0, -12.2, 0, 1],
+];
+solids.push(
+  ...propSolids(
+    PROPS,
+    (kind) =>
+      (
+        ({
+          rock: 'concrete-wall',
+          debris: 'wood',
+          vehicle: 'steel',
+          structure: 'concrete-wall',
+        }) as const
+      )[kind],
+  ),
+);
+
+const SCATTER: ScatterRegion[] = [
+  {
+    kind: 'weed-low',
+    region: region([-43, 0, -31], [43, 0.6, 31]),
+    count: 320,
+    seed: 13,
+    scale: [1, 1.5],
+  },
+  {
+    kind: 'grass-dry',
+    region: region([-43, 0, -31], [43, 0.6, 31]),
+    count: 260,
+    seed: 29,
+    scale: [0.8, 1.3],
+  },
+  {
+    kind: 'stones-small',
+    region: region([-43, 0, -31], [43, 0.6, 31]),
+    count: 160,
+    seed: 31,
+    scale: [0.8, 1.3],
+  },
+  {
+    kind: 'branches-dry',
+    region: region([-43, 0, -31], [43, 0.6, 31]),
+    count: 60,
+    seed: 47,
+    scale: [0.9, 1.2],
+  },
+];
+
+const BACKDROP: BackdropItem[] = [
+  { model: 'cliff', pos: vec3(94.5, 0, 16.7), yaw: 1.745, scale: 3.8 },
+  { model: 'cliff', pos: vec3(65.6, 0, 73.7), yaw: 2.414, scale: 3.8 },
+  { model: 'cliff', pos: vec3(-19.4, 0, 81.7), yaw: 3.374, scale: 3.8 },
+  { model: 'cliff', pos: vec3(-68.0, 0, 53.8), yaw: 4.043, scale: 3.8 },
+  { model: 'cliff', pos: vec3(-89.3, 0, 0.0), yaw: 4.712, scale: 3.8 },
+  { model: 'cliff', pos: vec3(-52.8, 0, -75.4), yaw: 5.672, scale: 3.8 },
+  { model: 'cliff', pos: vec3(5.5, 0, -94.5), yaw: 0.058, scale: 3.8 },
+  { model: 'cliff', pos: vec3(82.8, 0, -51.1), yaw: 1.018, scale: 3.8 },
+  { model: 'mountain', pos: vec3(120.2, 0, 24.3), yaw: 1.77, scale: 6 },
+  { model: 'mountain', pos: vec3(71.3, 0, 102.7), yaw: 2.535, scale: 6 },
+  { model: 'mountain', pos: vec3(-59.9, 0, 112.3), yaw: 3.632, scale: 6 },
+  { model: 'mountain', pos: vec3(-123.2, 0, 40.3), yaw: 4.396, scale: 6 },
+  { model: 'mountain', pos: vec3(-118.9, 0, -57.3), yaw: 5.161, scale: 6 },
+  { model: 'mountain', pos: vec3(-3.0, 0, -119.1), yaw: 6.258, scale: 6 },
+  { model: 'mountain', pos: vec3(81.9, 0, -89.8), yaw: 0.74, scale: 6 },
+];
+
+const DRESSING = dressing(PROPS, SCATTER, BACKDROP);
+
 export const INDUSTRIAL_WAREHOUSE: MapDefinition = {
   id: 'industrial-warehouse',
   name: 'Industrial Warehouse',
@@ -334,6 +444,7 @@ export const INDUSTRIAL_WAREHOUSE: MapDefinition = {
   navHints,
   features,
   materials,
+  dressing: DRESSING,
   lighting: {
     sunDir: unit(0.35, -0.8, 0.48),
     sunColour: 0xfff4e0,
@@ -356,5 +467,14 @@ export const INDUSTRIAL_WAREHOUSE: MapDefinition = {
         shadow: true,
       },
     ],
+    atmosphere: {
+      sky: 'warehouse-storm',
+      skyRotation: 2.2,
+      exposure: 0.8,
+      envIntensity: 0.5,
+      fogExp2: { colour: 0x6c737c, density: 0.013 },
+      hemiScaleWithEnv: 0.5,
+      sunScale: 0.55,
+    },
   },
 };

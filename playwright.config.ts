@@ -36,7 +36,8 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: 'npx vite preview --outDir dist-test --host 127.0.0.1 --port 4173 --strictPort',
+    command:
+      'npx vite preview --config vite.preview.config.ts --outDir dist-test --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: false,
     timeout: 60_000,

@@ -10,6 +10,7 @@ import { SEAM_GLOBAL } from './markers';
 /** What the seams need from the app (structural; no app-shell edge). */
 export interface SeamHost extends SeamTarget {
   diagnostics(): Readonly<Record<string, number>>;
+  renderStats(): Readonly<Record<string, number | boolean | readonly number[]>>;
 }
 
 export interface SeamApi {
@@ -18,6 +19,8 @@ export interface SeamApi {
   setSeed(seed: number): void;
   fastForward(ticks: number): void;
   diagnostics(): Readonly<Record<string, number>>;
+  /** Renderer stats copy: assetFallbacks, envActive, skinnedBots, textureFormats (BR-G-84). */
+  renderStats(): Readonly<Record<string, number | boolean | readonly number[]>>;
   /** Constant for the page; a changed marker means the page reloaded. */
   readonly marker: string;
   /** Present only when the bypass is active. */
@@ -40,6 +43,7 @@ export function installTestSeams(app: SeamHost, win: object, opts: SeamOptions):
       app.fastForward(ticks);
     },
     diagnostics: () => app.diagnostics(),
+    renderStats: () => app.renderStats(),
     marker: opts.marker,
     ...(opts.simulateLockLoss === undefined ? {} : { simulateLockLoss: opts.simulateLockLoss }),
   });

@@ -135,8 +135,9 @@ function corridor(def: MapDefinition, tag: MapFeatureTag): string | null {
 function courtyard(def: MapDefinition, tag: MapFeatureTag): string | null {
   const r = rectOf(tag.region);
   if (width(r) < 14 - EPS || depth(r) < 14 - EPS) return 'region smaller than 14 x 14 m';
+  // Blocking props (BR-G-20) are dressing like crates and barriers.
   const inside = solidsOverlappingXZ(def, tag.region);
-  if (inside.some((s) => s.kind !== 'crate' && s.kind !== 'barrier')) {
+  if (inside.some((s) => s.kind !== 'crate' && s.kind !== 'barrier' && s.prop === undefined)) {
     return 'solids other than crates and barriers inside';
   }
   const area = inside.reduce((sum, s) => {
@@ -238,7 +239,8 @@ function walkway(def: MapDefinition, tag: MapFeatureTag): string | null {
 function openArea(def: MapDefinition, tag: MapFeatureTag): string | null {
   const r = rectOf(tag.region);
   if (width(r) < 20 - EPS || depth(r) < 20 - EPS) return 'region smaller than 20 x 20 m';
-  const inside = solidsOverlappingXZ(def, tag.region);
+  // Blocking props (BR-G-20) are low cover dressing, not layout; they are not counted.
+  const inside = solidsOverlappingXZ(def, tag.region).filter((s) => s.prop === undefined);
   if (inside.length > 8) return `${inside.length} solids inside; limit 8`;
   return inside.every((s) => s.box.max.y <= 2.6 + EPS) ? null : 'solid taller than 2.6 m inside';
 }

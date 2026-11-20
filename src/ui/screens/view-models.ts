@@ -74,7 +74,7 @@ export interface EndOfRoundVM {
   readonly setup: MatchSetup;
 }
 
-export type LoadingStepId = 'map' | 'nav' | 'bots' | 'shaders';
+export type LoadingStepId = 'map' | 'nav' | 'assets' | 'bots' | 'shaders';
 
 export interface LoadingStepVM {
   readonly id: LoadingStepId;

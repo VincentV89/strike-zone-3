@@ -5,7 +5,12 @@
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ASSETS_CACHE_CONTROL, INDEX_CACHE_CONTROL } from '../../infra/lib/strikezone-stack.ts';
+import {
+  ASSETS_CACHE_CONTROL,
+  BINARY_TYPES,
+  DEPLOY_MEMORY_MB,
+  INDEX_CACHE_CONTROL,
+} from '../../infra/lib/strikezone-stack.ts';
 import {
   dependsOn,
   FIXTURE_DIR,
@@ -40,23 +45,74 @@ function listFiles(dir: string, base: string = dir): string[] {
 
 const [assetsId, webAssets] = deployment('WebAssetsCustomResource');
 const [, webIndex] = deployment('WebIndexCustomResource');
+const binaries = BINARY_TYPES.map((t) => ({ ...t, res: deployment(`${t.id}CustomResource`) }));
+const hashedDeployments = [webAssets, ...binaries.map((b) => b.res[1])];
 
 describe('ordered, non-pruning publish (T-H-7)', () => {
-  it('SEC-H-15 REL-H-02 WebIndex depends on WebAssets', () => {
+  it('SEC-H-15 REL-H-02 WebIndex depends on every hashed-asset deployment (ID-G-01)', () => {
     expect(dependsOn(webIndex)).toContain(assetsId);
-    expect(dependsOn(webAssets).some((d) => d.startsWith('WebIndex'))).toBe(false);
+    for (const b of binaries) expect(dependsOn(webIndex)).toContain(b.res[0]);
+    for (const d of hashedDeployments) {
+      expect(dependsOn(d).some((x) => x.startsWith('WebIndex'))).toBe(false);
+    }
   });
 
-  it('SEC-H-15 REL-H-02 neither deployment prunes', () => {
-    expect(webAssets.Properties?.['Prune']).toBe(false);
-    expect(webIndex.Properties?.['Prune']).toBe(false);
+  it('SEC-H-15 REL-H-02 no deployment prunes', () => {
+    for (const d of [...hashedDeployments, webIndex]) expect(d.Properties?.['Prune']).toBe(false);
   });
 
-  it('SEC-H-15 WebAssets excludes index.html and WebIndex carries only index.html', () => {
-    expect(webAssets.Properties?.['Exclude']).toEqual(['index.html']);
+  it('SEC-H-15 WebAssets excludes index.html and the binaries; WebIndex carries only index.html', () => {
+    expect(webAssets.Properties?.['Exclude']).toEqual(['index.html', '*.glb', '*.ktx2', '*.wasm']);
     expect(webAssets.Properties).not.toHaveProperty('Include');
     expect(webIndex.Properties?.['Exclude']).toEqual(['*']);
     expect(webIndex.Properties?.['Include']).toEqual(['index.html']);
+  });
+
+  it('BR-G-83 each binary type has its own deployment with an explicit Content-Type and immutable caching', () => {
+    expect(binaries.map((b) => [b.pattern, b.contentType])).toEqual([
+      ['*.glb', 'model/gltf-binary'],
+      ['*.ktx2', 'image/ktx2'],
+      ['*.wasm', 'application/wasm'],
+    ]);
+    for (const b of binaries) {
+      const p = b.res[1].Properties ?? {};
+      expect(p['Exclude']).toEqual(['*']);
+      expect(p['Include']).toEqual([b.pattern]);
+      expect(p['SystemMetadata']).toEqual({
+        'cache-control': ASSETS_CACHE_CONTROL,
+        'content-type': b.contentType,
+      });
+      expect(p).not.toHaveProperty('DistributionId');
+    }
+  });
+
+  it('ID-G-02 the include/exclude lists partition every published extension', () => {
+    const publishedBy = (file: string): string[] => {
+      const out: string[] = [];
+      if (file === 'index.html') out.push('WebIndex');
+      const bin = BINARY_TYPES.find((t) => file.endsWith(t.pattern.slice(1)));
+      if (bin !== undefined) out.push(bin.id);
+      else if (file !== 'index.html') out.push('WebAssets');
+      return out;
+    };
+    for (const f of [
+      'index.html',
+      'assets/a.js',
+      'assets/a.css',
+      'assets/m.glb',
+      'assets/t.ktx2',
+      'assets/b.wasm',
+    ]) {
+      expect(publishedBy(f)).toHaveLength(1);
+    }
+  });
+
+  it('ID-G-03 every deployment shares one handler Lambda (same memoryLimit)', () => {
+    const fns = resourcesOfType(json, 'AWS::Lambda::Function').filter(([id]) =>
+      id.startsWith('CustomCDKBucketDeployment'),
+    );
+    expect(fns).toHaveLength(1);
+    expect(fns[0]?.[1].Properties?.['MemorySize']).toBe(DEPLOY_MEMORY_MB);
   });
 
   it('SEC-H-15 only WebIndex invalidates, and only /*', () => {

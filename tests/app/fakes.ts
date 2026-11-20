@@ -17,7 +17,9 @@ export interface FakeRenderer extends GameRenderer {
   lastAlpha: number;
   lastEventCount: number;
   live: { geometries: number; textures: number };
-  failNext: Partial<Record<'buildMap' | 'precompile', boolean>>;
+  failNext: Partial<Record<'buildMap' | 'precompile' | 'applyAssets', boolean>>;
+  /** When set, loadAssets waits for it (asset-step timing tests). */
+  assetsGate: Promise<void> | null;
   initResult: 'ok' | 'NO_WEBGL2';
   throwOnRender: boolean;
   loseContext(): void;
@@ -42,6 +44,14 @@ export function fakeRenderer(): FakeRenderer {
     activeParticles: 0,
     frameFaults: 0,
     contextLost: false,
+    shadowOnlyCalls: 0,
+    textureBytesEstimate: 0,
+    dressingInstances: 0,
+    dressingBatches: 0,
+    skinnedBots: 0,
+    assetFallbacks: 0,
+    envActive: false,
+    textureFormats: [],
   };
   const r: FakeRenderer = {
     calls: [],
@@ -50,6 +60,7 @@ export function fakeRenderer(): FakeRenderer {
     lastEventCount: 0,
     live: { geometries: 0, textures: 0 },
     failNext: {},
+    assetsGate: null,
     initResult: 'ok',
     throwOnRender: false,
     init() {
@@ -64,6 +75,18 @@ export function fakeRenderer(): FakeRenderer {
       }
       r.live = { geometries: 12, textures: 6 };
       return Promise.resolve();
+    },
+    async loadAssets() {
+      r.calls.push('loadAssets');
+      if (r.assetsGate !== null) await r.assetsGate;
+      return { requested: 0, loaded: 0, failed: [], aborted: 0, bytes: 0 };
+    },
+    applyAssets() {
+      r.calls.push('applyAssets');
+      if (r.failNext.applyAssets === true) {
+        r.failNext.applyAssets = false;
+        throw new Error('apply failed');
+      }
     },
     spawnActors(n) {
       r.calls.push(`spawnActors:${String(n)}`);

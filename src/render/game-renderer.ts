@@ -8,9 +8,11 @@
  */
 import {
   AmbientLight,
+  CircleGeometry,
   Color,
   DirectionalLight,
   Fog,
+  FogExp2,
   Group,
   Matrix4,
   Mesh,
@@ -40,8 +42,26 @@ import {
   type Diagnostics,
   type Result,
 } from '../core';
-import type { PlayerView, SimEvent, SimSnapshot } from '../contracts';
+import type { MapId, PlayerView, SimEvent, SimSnapshot } from '../contracts';
 import type { MapDefinition } from '../maps';
+import { applyPbrSets, attachViewmodel, BOT_KEY, entryOf, VIEWMODEL_KEYS } from './assets/apply';
+import { createAssetLibrary, type AssetLibrary } from './assets/library';
+import type {
+  AssetEntry,
+  AssetLoadReport,
+  AssetPort,
+  AssetRuntime,
+  BotCharacterPool,
+  BotFrame,
+  DressingLayer,
+  ParsedModel,
+} from './assets/types';
+import {
+  dataTextureBytes,
+  SHADOW_CAMERA_MASK,
+  SHADOW_ONLY_LAYER,
+  textureBudgetBytes,
+} from './budget';
 import {
   botColour,
   botPartMatrices,
@@ -112,7 +132,18 @@ import {
 export interface RendererDeps {
   readonly diagnostics: Diagnostics;
   readonly reducedMotion?: boolean;
+  /** Asset I/O from app-shell (BR-G-01). Without it the renderer stays procedural. */
+  readonly assets?: AssetPort;
 }
+
+const FETCH_POOL = 4;
+const EMPTY_REPORT: AssetLoadReport = Object.freeze({
+  requested: 0,
+  loaded: 0,
+  failed: Object.freeze([]),
+  aborted: 0,
+  bytes: 0,
+});
 
 export interface RendererInternals {
   readonly hostFactory: GlHostFactory;
@@ -219,6 +250,16 @@ export function createGameRendererWith(
   let decals: DecalPool | null = null;
   let particles: ParticlePool | null = null;
 
+  // Graphics uplift: page-lifetime asset state (BR-G-16). The library and runtime survive
+  // disposeRound; only round objects built from them are disposed.
+  const port = deps.assets ?? null;
+  const library: AssetLibrary | null =
+    port === null ? null : createAssetLibrary({ port, diagnostics, yieldTask: internals.yieldTask });
+  let runtime: AssetRuntime | null = null;
+  let kitFailed = false;
+  let kitP: Promise<AssetRuntime | null> | null = null;
+  const vmAttached = [false, false, false];
+
   // Round objects.
   let mapRoot: Group | null = null;
   let mapLights: MapLights | null = null;
@@ -227,6 +268,33 @@ export function createGameRendererWith(
   const roundMaterials: Material[] = [];
   const roundTextures: DataTexture[] = [];
   let spawned = 0;
+  let currentDef: MapDefinition | null = null;
+  let mapMaterials = new Map<string, MeshStandardMaterial>();
+  /** Fallback boxes of blocking props, per model pack (hidden once the pack is drawn). */
+  let propBuckets = new Map<string, Mesh[]>();
+  let outerGround: Mesh | null = null;
+  let dressing: DressingLayer | null = null;
+  let dressingPreset: PresetId | null = null;
+  let characters: BotCharacterPool | null = null;
+  let botModel: { model: ParsedModel; entry: AssetEntry } | null = null;
+  let envActive = false;
+  let atmosphereOn = false;
+  const fogExp2 = new FogExp2(0x000000, 0.01);
+  const botFrame: BotFrame = {
+    x: 0,
+    y: 0,
+    z: 0,
+    yaw: 0,
+    speed: 0,
+    crouch: false,
+    alive: true,
+    deathAge: -1,
+    fireAge: -1,
+    bright: 1,
+    flash: 0,
+    visible: true,
+  };
+  const botSpeed = new Float32Array(MAX_BOTS + 1);
 
   // Round transients (§2.11 step 3).
   const fallX = new Float32Array(MAX_BOTS + 1);
@@ -271,6 +339,14 @@ export function createGameRendererWith(
     activeParticles: 0,
     frameFaults: 0,
     contextLost: false,
+    shadowOnlyCalls: 0,
+    textureBytesEstimate: 0,
+    dressingInstances: 0,
+    dressingBatches: 0,
+    skinnedBots: 0,
+    assetFallbacks: 0,
+    envActive: false,
+    textureFormats: [],
   };
 
   function trackGeometry(g: BufferGeometry): void {
@@ -396,20 +472,47 @@ export function createGameRendererWith(
         return;
       }
     }
-    // Step 2: bucket geometry.
-    bucketData = buildBuckets(def);
-    buckets = bucketData.map((b) => {
+    // Step 2: bucket geometry. Prop solids get their own buckets per model pack, so they
+    // can be hidden once the pack's models draw them (business-logic-model §4).
+    currentDef = def;
+    mapMaterials = materials;
+    const bucketMesh = (b: BucketData, tag: string): Mesh => {
       const g = bucketGeometry(b);
       trackGeometry(g);
       const mesh = new Mesh(g, materials.get(b.material));
-      mesh.name = `bucket:${b.material}${b.caster ? ':caster' : ''}`;
+      mesh.name = `bucket:${tag}${b.material}${b.caster ? ':caster' : ''}`;
       mesh.receiveShadow = true;
       mesh.castShadow = b.caster;
       mesh.matrixAutoUpdate = false;
       mesh.updateMatrix();
       root.add(mesh);
       return mesh;
-    });
+    };
+    const layoutSolids = def.solids.filter((x) => x.prop === undefined);
+    bucketData = buildBuckets(layoutSolids.length === def.solids.length ? def : { ...def, solids: layoutSolids });
+    buckets = bucketData.map((b) => bucketMesh(b, ''));
+    propBuckets = new Map();
+    const dress = def.dressing;
+    if (dress !== undefined) {
+      const packOf = new Map(dress.catalog.map((c) => [c.id, c.asset] as const));
+      const byPack = new Map<string, MapDefinition['solids'][number][]>();
+      for (const x of def.solids) {
+        const id = x.prop === undefined ? undefined : dress.props[x.prop]?.[0];
+        const pack = id === undefined ? undefined : packOf.get(id);
+        if (pack === undefined) continue;
+        const list = byPack.get(pack) ?? [];
+        list.push(x);
+        byPack.set(pack, list);
+      }
+      for (const [pack, list] of byPack) {
+        const data = buildBuckets({ ...def, solids: list, ramps: [] });
+        const meshes = data.map((b) => bucketMesh(b, `prop:${pack}:`));
+        bucketData = bucketData.concat(data);
+        buckets = buckets.concat(meshes);
+        propBuckets.set(pack, meshes);
+      }
+      if (dress.backdrop.length > 0) outerGround = createOuterGround(def, materials, root);
+    }
     await internals.yieldTask();
     if (token !== buildToken) {
       abandonBuild();
@@ -452,6 +555,83 @@ export function createGameRendererWith(
     roundMaterials.length = 0;
     roundTextures.length = 0;
     mapLights = null;
+    disposeAppliedAssets();
+    if (outerGround !== null) {
+      outerGround.geometry.dispose();
+      liveGeometries.delete(outerGround.geometry);
+      outerGround = null;
+    }
+    propBuckets = new Map();
+    mapMaterials = new Map();
+    currentDef = null;
+  }
+
+  function createOuterGround(
+    def: MapDefinition,
+    materials: ReadonlyMap<string, MeshStandardMaterial>,
+    root: Group,
+  ): Mesh | null {
+    const first = def.solids[0];
+    const mat = first === undefined ? undefined : materials.get(first.material);
+    if (mat === undefined) return null;
+    // A ground disc under the backdrop so distant rocks do not float (BR-G-33).
+    const g = new CircleGeometry(300, 48);
+    const repeat = def.materials.find((m) => m.id === first?.material)?.repeatM ?? 8;
+    const uv = g.attributes['uv'];
+    if (uv !== undefined) {
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * 600) / repeat, (uv.getY(i) * 600) / repeat);
+    }
+    g.rotateX(-Math.PI / 2);
+    g.translate(0, -0.03, 0);
+    trackGeometry(g);
+    const m = new Mesh(g, mat);
+    m.name = 'outer-ground';
+    m.receiveShadow = true;
+    m.matrixAutoUpdate = false;
+    m.updateMatrix();
+    root.add(m);
+    return m;
+  }
+
+  /** Round objects built from assets (BR-G-16: the library itself is kept). */
+  function disposeAppliedAssets(): void {
+    if (dressing !== null) {
+      dressing.group.removeFromParent();
+      dressing.dispose();
+      dressing = null;
+    }
+    if (characters !== null) {
+      characters.group.removeFromParent();
+      characters.dispose();
+      characters = null;
+    }
+    setRigLayer(false);
+    runtime?.releaseSlots();
+    resetAtmosphere();
+  }
+
+  function resetAtmosphere(): void {
+    worldScene.background = background;
+    worldScene.environment = null;
+    worldScene.fog = fog;
+    host?.setExposure(1);
+    atmosphereOn = false;
+    envActive = false;
+  }
+
+  /** The 9-part rig: visible bots (fallback) or the shadow-only proxy (performance-design §3.3). */
+  function setRigLayer(proxy: boolean): void {
+    if (rig === null) return;
+    for (const part of rig.parts) {
+      if (proxy) {
+        part.layers.set(SHADOW_ONLY_LAYER);
+        part.visible = preset.botShadowCasters > 0;
+        part.castShadow = preset.botShadowCasters > 0;
+      } else {
+        part.layers.set(0);
+        part.visible = true;
+      }
+    }
   }
 
   function spawnActors(n: number): void {
@@ -480,6 +660,212 @@ export function createGameRendererWith(
         mesh.instanceMatrix.needsUpdate = true;
         if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
       }
+    }
+    botSpeed.fill(0);
+    spawnCharacters(n);
+  }
+
+  /** Skinned bots when the bot model is ready; the rig becomes the shadow proxy (BR-G-50). */
+  function spawnCharacters(n: number): void {
+    if (characters !== null) {
+      characters.group.removeFromParent();
+      characters.dispose();
+      characters = null;
+    }
+    setRigLayer(false);
+    if (runtime === null || library === null || botModel === null || mapRoot === null) return;
+    const pool = runtime.character.createPool(botModel.model, botModel.entry, n, library);
+    if (pool === null) {
+      diagnostics.warnOnce('render/asset-invalid');
+      return;
+    }
+    pool.setQuality(preset.botLodDistanceM, preset.botAnimHz, reducedMotion);
+    characters = pool;
+    mapRoot.add(pool.group);
+    setRigLayer(true);
+  }
+
+  // ---------------------------------------------------------------- assets
+
+  function loadRuntime(): Promise<AssetRuntime | null> {
+    if (kitP !== null) return kitP;
+    const p = port;
+    const h = host;
+    if (p === null || h === null) return Promise.resolve(null);
+    kitP = p.loadKit().then(
+      (mod) => {
+        const rt = mod.createAssetRuntime({ diagnostics });
+        h.bindKit(rt);
+        runtime = rt;
+        return rt;
+      },
+      () => {
+        // Memoised failure for the page (BR-G-12): every asset falls back.
+        kitFailed = true;
+        diagnostics.warnOnce('render/asset-kit-failed');
+        return null;
+      },
+    );
+    return kitP;
+  }
+
+  async function loadAssets(
+    map: MapId,
+    signal: AbortSignal,
+    onProgress: (p: number) => void,
+  ): Promise<AssetLoadReport> {
+    // Init gate (BR-G-02): no kit request and no fetch before a successful init().
+    if (phase === 'uninit' || host === null || contextLost || library === null) return EMPTY_REPORT;
+    const lib = library;
+    const rt = await loadRuntime();
+    if (rt === null || signal.aborted) {
+      onProgress(1);
+      return EMPTY_REPORT;
+    }
+    const entries = entriesForMap(rt.manifest, map);
+    const total = entries.reduce((n, e) => n + e.bytes, 0) || 1;
+    let settled = 0;
+    let aborted = 0;
+    let loaded = 0;
+    let shown = 0;
+    const report = (): void => {
+      let received = 0;
+      for (const e of entries) {
+        const st = lib.state(e.key);
+        received += st === 'ready' || st === 'failed' ? e.bytes : Math.min(e.bytes, lib.received(e.key));
+      }
+      const p = 0.85 * (received / total) + 0.15 * (settled / Math.max(1, entries.length));
+      shown = Math.max(shown, Math.min(1, p));
+      onProgress(shown);
+    };
+    let next = 0;
+    const worker = async (): Promise<void> => {
+      while (next < entries.length) {
+        const e = entries[next];
+        next += 1;
+        if (e === undefined) continue;
+        const outcome = await lib.request(e, signal, rt, map);
+        settled += 1;
+        if (outcome === 'aborted') aborted += 1;
+        else if (outcome === 'ready') loaded += 1;
+        report();
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(FETCH_POOL, entries.length) }, worker));
+    report();
+    return {
+      requested: entries.length,
+      loaded,
+      failed: entries.filter((e) => lib.state(e.key) === 'failed').map((e) => e.key),
+      aborted,
+      bytes: entries.reduce((n, e) => n + (lib.state(e.key) === 'ready' ? e.bytes : 0), 0),
+    };
+  }
+
+  function entriesForMap(manifest: readonly AssetEntry[], map: MapId): AssetEntry[] {
+    const order = (e: AssetEntry): number =>
+      e.kind === 'sky' ? 0 : e.key === BOT_KEY ? 1 : e.key.startsWith('vm-') ? 2 : e.kind === 'model' ? 3 : 4;
+    return manifest
+      .filter((e) => e.maps === 'all' || e.maps.includes(map))
+      .sort((a, b) => order(a) - order(b) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  }
+
+  /**
+   * Applies ready assets to the built map; every missing piece keeps its procedural
+   * fallback (BR-G-14). Synchronous; uploads go through the runtime here, never in render().
+   */
+  function applyAssets(): void {
+    const rt = runtime;
+    const lib = library;
+    const def = currentDef;
+    if (rt === null || lib === null || def === null || mapRoot === null || host === null) return;
+    disposeAppliedAssets();
+    rt.setMaxPx(preset.textureMaxPx, lib);
+    applyPbrSets(def, mapMaterials, rt, lib);
+    applyAtmosphere(def, rt, lib);
+    applyViewmodels(rt, lib);
+    const bot = entryOf(rt, BOT_KEY);
+    const bm = lib.model(BOT_KEY);
+    botModel = bot !== undefined && bm !== null ? { model: bm, entry: bot } : null;
+    buildDressing(def, rt, lib);
+    checkTextureBudget(rt, lib);
+    applyPreset(preset);
+  }
+
+  function applyAtmosphere(def: MapDefinition, rt: AssetRuntime, lib: AssetLibrary): void {
+    const atm = def.lighting.atmosphere;
+    if (atm === undefined) return;
+    const skyKey = `sky-${atm.sky}`;
+    const sky = rt.texture(skyKey, lib);
+    if (sky === null) return; // flat background and linear fog stay (BR-G-14)
+    worldScene.background = sky;
+    worldScene.backgroundRotation.set(0, atm.skyRotation, 0);
+    const env = rt.environment(skyKey, lib);
+    worldScene.environment = env;
+    worldScene.environmentIntensity = atm.envIntensity;
+    worldScene.environmentRotation.set(0, atm.skyRotation, 0);
+    fogExp2.color.setHex(atm.fogExp2.colour);
+    fogExp2.density = atm.fogExp2.density;
+    worldScene.fog = fogExp2;
+    host?.setExposure(atm.exposure);
+    if (mapLights !== null) {
+      mapLights.hemi.intensity = def.lighting.hemiIntensity * (env !== null ? atm.hemiScaleWithEnv : 1);
+      mapLights.sun.intensity = def.lighting.sunIntensity * atm.sunScale;
+    }
+    atmosphereOn = true;
+    envActive = env !== null;
+  }
+
+  function applyViewmodels(rt: AssetRuntime, lib: AssetLibrary): void {
+    const v = vm;
+    if (v === null) return;
+    VIEWMODEL_KEYS.forEach((key, i) => {
+      if (vmAttached[i] === true) return;
+      const wr = v.rigs[i];
+      const entry = entryOf(rt, key);
+      const model = lib.model(key);
+      if (wr === undefined || entry === undefined || model === null) return;
+      const boxes = wr.group.children.filter((c) => c instanceof Mesh);
+      if (attachViewmodel(wr.group, boxes, wr.muzzle, model.root, entry, rt, lib)) vmAttached[i] = true;
+    });
+  }
+
+  function buildDressing(def: MapDefinition, rt: AssetRuntime, lib: AssetLibrary): void {
+    if (def.dressing === undefined || mapRoot === null) return;
+    const ready = new Set<string>();
+    for (const c of def.dressing.catalog) if (lib.model(c.asset) !== null) ready.add(c.asset);
+    const layer = rt.dressing.build(def, lib, {
+      density: preset.dressingDensity,
+      cap: preset.dressingCap,
+      lod0DistanceM: preset.propLodDistanceM,
+      drawDistanceM: preset.dressingDistanceM,
+      maxBatches: preset.dressingBatchCap,
+      sway: false,
+      readyPacks: ready,
+      manifest: rt.manifest,
+    });
+    if (layer === null) return;
+    dressing = layer;
+    dressingPreset = preset.id;
+    mapRoot.add(layer.group);
+    // Prop boxes hide only for packs the layer actually draws.
+    for (const [pack, meshes] of propBuckets) {
+      const drawn = ready.has(pack);
+      for (const m of meshes) {
+        m.visible = !drawn;
+        if (drawn) m.castShadow = false;
+      }
+    }
+  }
+
+  /** BR-G-72: over budget, halve the texture tier until it fits (one diagnostic). */
+  function checkTextureBudget(rt: AssetRuntime, lib: AssetLibrary): void {
+    const budget = textureBudgetBytes(preset);
+    let px = preset.textureMaxPx;
+    while (rt.textureBytes() > budget && px > 256) {
+      px /= 2;
+      diagnostics.warnOnce('render/texture-budget');
+      rt.setMaxPx(px, lib);
     }
   }
 
@@ -572,6 +958,28 @@ export function createGameRendererWith(
         t.needsUpdate = true;
       }
     }
+    applyAssetPreset(p);
+  }
+
+  /** Preset steps for asset layers (business-logic-model §7): re-tier, LOD, rate, shadows. */
+  function applyAssetPreset(p: PresetSpec): void {
+    if (mapLights !== null) {
+      // Shadow cameras also see the bot proxy layer (WebGLShadowMap uses their layers).
+      mapLights.sun.shadow.camera.layers.mask = SHADOW_CAMERA_MASK;
+      for (const l of mapLights.locals) l.shadow.camera.layers.mask = SHADOW_CAMERA_MASK;
+    }
+    if (runtime !== null && library !== null) runtime.setMaxPx(p.textureMaxPx, library);
+    if (characters !== null) {
+      characters.setQuality(p.botLodDistanceM, p.botAnimHz, reducedMotion);
+      setRigLayer(true);
+    }
+    if (dressing !== null && dressingPreset !== p.id && currentDef !== null && runtime !== null && library !== null) {
+      dressing.group.removeFromParent();
+      dressing.dispose();
+      dressing = null;
+      buildDressing(currentDef, runtime, library);
+    }
+    dressing?.setCastShadow(p.maxShadowCasters > 16);
   }
 
   function applyEnvironment(): void {
@@ -634,6 +1042,16 @@ export function createGameRendererWith(
     const h = host;
     if (h === null) return;
     for (const t of liveTextures) t.needsUpdate = true;
+    // Kept CPU mips re-upload with no fetch; the PMREM environment is rebuilt (BR-G-17).
+    if (runtime !== null && library !== null) {
+      runtime.restore(library);
+      const atm = currentDef?.lighting.atmosphere;
+      if (atmosphereOn && atm !== undefined) {
+        const env = runtime.environment(`sky-${atm.sky}`, library);
+        worldScene.environment = env;
+        envActive = env !== null;
+      }
+    }
     applyPreset(preset);
     compileAll(h).then(
       () => {
@@ -726,6 +1144,7 @@ export function createGameRendererWith(
       updateBots(prev, curr, alpha, t);
       updateEffects(t);
     }
+    dressing?.refresh(worldCam.position.x, worldCam.position.y, worldCam.position.z, t);
     updateViewmodel(prev.player, curr.player, alpha, t);
 
     h.clear();
@@ -1001,6 +1420,27 @@ export function createGameRendererWith(
       botPartMatrices(pose, partMats, muzzle);
       const bright = deathBrightness(pose.deathAge);
       const flash = b1.alive && t < (hitFlashUntil[id] ?? -1) ? HIT_FLASH_STRENGTH : 0;
+      if (characters !== null) {
+        const dt = (curr.tick - prev.tick) * TICK_DT;
+        if (dt > 0 && b0 !== b1) {
+          const v = Math.hypot(b1.pos.x - b0.pos.x, b1.pos.z - b0.pos.z) / dt;
+          botSpeed[id] = b1.moving && Number.isFinite(v) ? v : 0;
+        } else if (!b1.moving) botSpeed[id] = 0;
+        botFrame.x = pose.x;
+        botFrame.y = pose.y;
+        botFrame.z = pose.z;
+        botFrame.yaw = pose.yaw;
+        botFrame.speed = botSpeed[id] ?? 0;
+        botFrame.crouch = b1.crouch;
+        botFrame.alive = b1.alive;
+        botFrame.deathAge = b1.alive ? -1 : pose.deathAge;
+        botFrame.fireAge = b1.lastFireTick >= 0 ? t - b1.lastFireTick * TICK_DT : -1;
+        botFrame.bright = bright;
+        botFrame.flash = flash;
+        botFrame.visible = true;
+        characters.update(k, botFrame, t, worldCam.position.x, worldCam.position.z);
+        characters.muzzle(k, muzzle);
+      }
       for (let p = 0; p < BOT_PART_COUNT; p++) {
         const mesh = r.parts[p];
         const m = partMats[p];
@@ -1046,6 +1486,10 @@ export function createGameRendererWith(
   function hideBot(r: BotRig, k: number): void {
     for (let p = 0; p < BOT_PART_COUNT; p++) r.parts[p]?.setMatrixAt(k, ZERO_MATRIX);
     r.flashes.setMatrixAt(k, ZERO_MATRIX);
+    if (characters !== null) {
+      botFrame.visible = false;
+      characters.update(k, botFrame, lastT, 0, 0);
+    }
   }
 
   function uploadInstances(mesh: InstancedMesh, count: number): void {
@@ -1134,8 +1578,17 @@ export function createGameRendererWith(
 
   // ---------------------------------------------------------------- stats
 
-  function countScene(scene: Object3D, out: { calls: number; tris: number }): void {
+  function countScene(
+    scene: Object3D,
+    out: { calls: number; tris: number; shadowOnly: number },
+    camLayers: Object3D['layers'],
+  ): void {
     scene.traverseVisible((o) => {
+      if (!o.layers.test(camLayers)) {
+        // Shadow-only proxies (layer 1) are drawn by shadow cameras only (§3.3).
+        if ((o as Partial<Mesh>).isMesh === true) out.shadowOnly += 1;
+        return;
+      }
       if (o instanceof Points) {
         const range = (o.geometry as BufferGeometry).drawRange.count;
         if (range > 0) out.calls += 1;
@@ -1160,10 +1613,12 @@ export function createGameRendererWith(
   }
 
   function readStats(): RenderStats {
-    const world = { calls: 0, tris: 0 };
-    const vmc = { calls: 0, tris: 0 };
-    countScene(worldScene, world);
-    if (vmVisible) countScene(vmScene, vmc);
+    const world = { calls: 0, tris: 0, shadowOnly: 0 };
+    const vmc = { calls: 0, tris: 0, shadowOnly: 0 };
+    countScene(worldScene, world, worldCam.layers);
+    if (vmVisible) countScene(vmScene, vmc, vmCam.layers);
+    // A texture background is drawn as one extra mesh by three.
+    if (worldScene.background !== background && worldScene.background !== null) world.calls += 1;
     let casters = 0;
     let shadowLights = 0;
     worldScene.traverseVisible((o) => {
@@ -1189,6 +1644,16 @@ export function createGameRendererWith(
     stats.activeParticles = particles?.live(lastT) ?? 0;
     stats.frameFaults = frameFaults;
     stats.contextLost = contextLost;
+    stats.shadowOnlyCalls = world.shadowOnly;
+    stats.textureBytesEstimate =
+      (runtime?.textureBytes() ?? 0) + roundTextures.length * dataTextureBytes(MAP_TEXTURE_SIZE);
+    stats.dressingInstances = dressing?.instances ?? 0;
+    stats.dressingBatches = dressing?.batches ?? 0;
+    stats.skinnedBots = characters?.count ?? 0;
+    stats.assetFallbacks = (library?.failedKeys().length ?? 0) + (kitFailed ? 1 : 0);
+    stats.envActive = envActive;
+    stats.textureFormats.length = 0;
+    for (const f of runtime?.textureFormats() ?? []) stats.textureFormats.push(f);
     return stats;
   }
 
@@ -1201,6 +1666,8 @@ export function createGameRendererWith(
     setPreset,
     setFov,
     resize,
+    loadAssets,
+    applyAssets,
     onContextLost: (cb) => subscribe(lostCbs, cb),
     onContextRestored: (cb) => subscribe(restoredCbs, cb),
     disposeRound,

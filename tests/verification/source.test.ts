@@ -184,7 +184,7 @@ describe('verification source rules', () => {
 
   it('smoke.ts passes the imported hosting-infra header constants, not copies (BR-VE-47)', () => {
     const src = readFileSync('scripts/smoke.ts', 'utf8');
-    expect(get('scripts/smoke.ts').imports).toContain('../infra/lib/headers.ts');
+    expect(get('scripts/smoke.ts').imports).toContain('../infra/lib/policy.ts');
     expect(src).toContain('expected: { csp: CSP, permissionsPolicy: PERMISSIONS_POLICY }');
     const others = UNIT_FILES.filter(
       (f) => f !== 'scripts/smoke.ts' && get(f).imports.some((i) => i.includes('infra/')),

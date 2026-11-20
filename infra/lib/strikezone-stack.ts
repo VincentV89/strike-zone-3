@@ -31,7 +31,12 @@ import { S3BucketOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { BlockPublicAccess, Bucket, BucketEncryption, ObjectOwnership } from 'aws-cdk-lib/aws-s3';
-import { BucketDeployment, CacheControl, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import {
+  BucketDeployment,
+  CacheControl,
+  Source,
+  type BucketDeploymentProps,
+} from 'aws-cdk-lib/aws-s3-deployment';
 import type { Asset } from 'aws-cdk-lib/aws-s3-assets';
 import type { Construct } from 'constructs';
 import { ScopeInvalidationAspect } from './aspects.ts';
@@ -43,6 +48,21 @@ import { createWebAsset } from './web-asset.ts';
 export const AUTO_DELETE_PROVIDER_ID = 'Custom::S3AutoDeleteObjectsCustomResourceProvider';
 
 export const ASSETS_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+
+/** One value for every deployment, so CDK keeps a single handler Lambda (ID-G-03). */
+export const DEPLOY_MEMORY_MB = 512;
+
+/** Binary asset types published with an explicit Content-Type (ID-G-01, BR-G-83). */
+export const BINARY_TYPES: readonly {
+  readonly id: string;
+  readonly pattern: string;
+  readonly contentType: string;
+}[] = Object.freeze([
+  { id: 'WebModels', pattern: '*.glb', contentType: 'model/gltf-binary' },
+  { id: 'WebTextures', pattern: '*.ktx2', contentType: 'image/ktx2' },
+  { id: 'WebWasm', pattern: '*.wasm', contentType: 'application/wasm' },
+]);
+export const BINARY_PATTERNS: readonly string[] = BINARY_TYPES.map((t) => t.pattern);
 export const INDEX_CACHE_CONTROL = 'no-cache';
 
 export interface StrikeZoneStackProps extends StackProps {
@@ -61,6 +81,8 @@ export class StrikeZoneStack extends Stack {
   readonly webAsset: Asset;
   readonly webAssets: BucketDeployment;
   readonly webIndex: BucketDeployment;
+  /** WebModels, WebTextures, WebWasm (ID-G-01). */
+  readonly webBinaries: readonly BucketDeployment[];
 
   constructor(scope: Construct, id: string, props: StrikeZoneStackProps) {
     super(scope, id, props);
@@ -116,14 +138,25 @@ export class StrikeZoneStack extends Stack {
     });
 
     // SEC-H-15, REL-H-02, PERF-H-02: hashed assets first, never pruned.
-    this.webAssets = new BucketDeployment(this, 'WebAssets', {
-      sources: [source],
-      destinationBucket: this.bucket,
-      exclude: ['index.html'],
-      prune: false,
-      cacheControl: [CacheControl.fromString(ASSETS_CACHE_CONTROL)],
-      logGroup: deployLogs,
-    });
+    // ID-G-01 (deployment-architecture-graphics-uplift §2): the Lambda's Python
+    // mimetypes table has no .glb or .ktx2, so each binary type gets its own
+    // deployment with an explicit Content-Type. WebAssets excludes them so no
+    // key is written twice. ID-G-03: every deployment uses the same
+    // memoryLimit, so CDK keeps one shared handler Lambda.
+    const hashed = (id: string, extra: Partial<BucketDeploymentProps>): BucketDeployment =>
+      new BucketDeployment(this, id, {
+        sources: [source],
+        destinationBucket: this.bucket,
+        prune: false,
+        cacheControl: [CacheControl.fromString(ASSETS_CACHE_CONTROL)],
+        logGroup: deployLogs,
+        memoryLimit: DEPLOY_MEMORY_MB,
+        ...extra,
+      });
+    this.webAssets = hashed('WebAssets', { exclude: ['index.html', ...BINARY_PATTERNS] });
+    this.webBinaries = BINARY_TYPES.map(({ id, pattern, contentType }) =>
+      hashed(id, { exclude: ['*'], include: [pattern], contentType }),
+    );
 
     // Then index.html, the only deployment that invalidates.
     this.webIndex = new BucketDeployment(this, 'WebIndex', {
@@ -136,8 +169,10 @@ export class StrikeZoneStack extends Stack {
       distribution: this.distribution,
       distributionPaths: ['/*'],
       logGroup: deployLogs,
+      memoryLimit: DEPLOY_MEMORY_MB,
     });
     this.webIndex.node.addDependency(this.webAssets);
+    for (const d of this.webBinaries) this.webIndex.node.addDependency(d);
 
     // SD-H-01: replace CDK's invalidation grant on "*" with one on this distribution.
     Aspects.of(this).add(new ScopeInvalidationAspect());

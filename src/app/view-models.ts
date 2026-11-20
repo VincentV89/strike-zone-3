@@ -24,6 +24,7 @@ import {
 export const LOADING_STEPS: readonly LoadingStepId[] = Object.freeze([
   'map',
   'nav',
+  'assets',
   'bots',
   'shaders',
 ]);
@@ -31,6 +32,7 @@ export const LOADING_STEPS: readonly LoadingStepId[] = Object.freeze([
 export const STEP_LABELS: Readonly<Record<LoadingStepId, string>> = Object.freeze({
   map: 'Map geometry',
   nav: 'Navigation',
+  assets: 'Assets',
   bots: 'Bots',
   shaders: 'Shaders',
 });
@@ -54,6 +56,7 @@ export function createLoadingProgress(): LoadingProgress {
   return {
     map: { progress: 0, state: 'pending' },
     nav: { progress: 0, state: 'pending' },
+    assets: { progress: 0, state: 'pending' },
     bots: { progress: 0, state: 'pending' },
     shaders: { progress: 0, state: 'pending' },
   };

@@ -2,13 +2,14 @@
  * Security assertions for the StrikeZone stack (security-design-hosting-infra,
  * "Assertion Suite Map"). Each test name starts with the requirement id.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { Token } from 'aws-cdk-lib';
 import { Match } from 'aws-cdk-lib/assertions';
 import { describe, expect, it } from 'vitest';
 import { REPO_ROOT } from '../../infra/lib/config.ts';
 import { CSP, PERMISSIONS_POLICY } from '../../infra/lib/headers.ts';
+import { PREVIEW_HEADERS } from '../../infra/lib/policy.ts';
 import {
   actionsOf,
   dependsOn,
@@ -175,12 +176,23 @@ describe('browser-facing headers (T-H-3, T-H-4)', () => {
     });
   });
 
-  it('SEC-H-07 CSP equals the foundation baseline verbatim and has no unsafe- source', () => {
+  it('SEC-H-07 CSP is the baseline plus exactly the two graphics-uplift additions (SR-G-01)', () => {
     expect(CSP).toBe(
-      "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+      "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
     );
-    expect(CSP).not.toContain('unsafe-');
+    // The only unsafe- token is wasm-unsafe-eval, which does not allow JS eval.
+    expect(CSP.replace("'wasm-unsafe-eval'", '')).not.toContain('unsafe-');
+    expect(CSP).not.toMatch(/img-src[^;]*blob:/);
+    expect(CSP).toMatch(/connect-src 'self';/);
     expect(PERMISSIONS_POLICY).toBe('camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+  });
+
+  it('SR-G-01 policy.ts is the single CDK-free source of the policy strings', () => {
+    const src = readFileSync(path.join(REPO_ROOT, 'infra/lib/policy.ts'), 'utf8');
+    expect(src).not.toMatch(/from 'aws-cdk-lib/);
+    expect(PREVIEW_HEADERS['Content-Security-Policy']).toBe(CSP);
+    expect(PREVIEW_HEADERS['Permissions-Policy']).toBe(PERMISSIONS_POLICY);
+    expect(PREVIEW_HEADERS['X-Content-Type-Options']).toBe('nosniff');
   });
 
   it('SEC-H-08 has no edge functions, Lambda@Edge or extra behaviours', () => {
