@@ -12,7 +12,7 @@ One AWS CDK v2 TypeScript app (`cdk.json` at the repository root, code in `infra
 | `infra/lib/web-asset.ts`        | The single web asset: build mode (local `npm run build:web`) or prebuilt mode                  |
 | `infra/lib/headers.ts`          | The CSP and the security headers policy                                                        |
 | `infra/lib/aspects.ts`          | `ScopeInvalidationAspect`                                                                      |
-| `infra/lib/strikezone-stack.ts` | Bucket, distribution, the two BucketDeployments, log groups, outputs                           |
+| `infra/lib/strikezone-stack.ts` | Bucket, distribution, the five BucketDeployments, log groups, outputs                          |
 | `tests/infra/`                  | CDK assertion tests; each test name starts with its requirement id (SEC-H, REL-H, PERF-H, ...) |
 | `tests/fixtures/web-dist/`      | Text-only prebuilt bundle the tests synthesise against                                         |
 
