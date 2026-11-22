@@ -20,7 +20,10 @@ const LOCAL_ORIGIN = /^http:\/\/127\.0\.0\.1:\d{2,5}$/;
 const FAULT_CODES = new Set(['app/frame-fault', 'app/frame-fault-tripped']);
 const ASSET_CODE = /^(render\/asset-|render\/texture-budget|app\/csp-violation)/;
 const LOAD_TIMEOUT = 120_000;
-const LIVE_TIMEOUT = 120_000;
+// The countdown is 3.5 s of game time, but on software WebGL (SwiftShader) the
+// default Medium preset with the authored assets renders at 0.1-0.8 FPS, so
+// reaching live took longer than 120 s in the 2026-11-22 dry run (DE-G-Q1 = C).
+const LIVE_TIMEOUT = 300_000;
 
 function resolveOrigin(): string | null {
   const local = process.env.SZ_SMOKE_ORIGIN;
