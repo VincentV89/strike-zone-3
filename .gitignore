@@ -16,3 +16,4 @@ reports/
 *.pem
 .aws/
 cdk.context.json
+tools/asset-pipeline/node_modules

@@ -10,28 +10,29 @@ Single-player browser 3D tactical FPS against CPU bots, built with TypeScript, V
 
 ## Scripts
 
-| Script                   | What it does                                                                                                                                                                                                                            |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`            | Vite dev server for the game                                                                                                                                                                                                            |
-| `npm run lint`           | `eslint . --max-warnings 0 && prettier --check .`                                                                                                                                                                                       |
-| `npm run typecheck`      | `tsc --noEmit` (strict, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`)                                                                                                                                                             |
-| `npm test`               | Vitest (Node environment, at most 2 workers)                                                                                                                                                                                            |
-| `npm run test:coverage`  | Vitest with v8 coverage; fails below 80 % lines on any glob listed in `vitest.config.ts` (`src/core/**`, `src/maps/**`, `src/physics/**`, `src/nav/**`, `src/sim/player/**`, `src/weapons/**`, `src/combat/**`, `src/ui/**` and others) |
-| `npm run check:imports`  | The import-graph and ring-lint tests on their own (`tests/arch`)                                                                                                                                                                        |
-| `npm run build`          | `vite build` into `dist/`                                                                                                                                                                                                               |
-| `npm run build:web`      | `vite build`; called by CDK local bundling with `--outDir` during `cdk deploy`                                                                                                                                                          |
-| `npm run synth`          | Infra typecheck, then offline `cdk synth --strict` on the prebuilt `dist/` (no credentials)                                                                                                                                             |
-| `npm run check:licences` | Licence, pinning, asset, secret and `dist/` checks; writes `reports/licences.json`                                                                                                                                                      |
-| `npm run audit`          | Advisory `npm audit` of production dependencies into `reports/audit.json` (not part of the gate)                                                                                                                                        |
-| `npm run check:seams`    | Fails if test-seam markers or a `dev*` chunk reach `dist/`, or the entry chunk exceeds 900 KB minified / 200 KB brotli; writes `reports/app-shell-bundle.json`                                                                          |
-| `npm run build:test`     | `vite build --mode test --outDir dist-test`: the e2e bundle with test seams (never deployed, not in the gate)                                                                                                                           |
-| `npm run e2e`            | `build:test`, then Playwright headless Chromium plays a seeded round and Play Again on both maps against `dist-test/` and writes `reports/e2e.json` (not in the gate; see below)                                                        |
-| `npm run smoke`          | Post-deploy smoke checks SM-1..SM-9 against `reports/cdk-outputs.json`, or blocked mode with the missing items; `-- --precheck` writes the credential precheck to `reports/precheck.json`                                               |
-| `npm run smoke:browser`  | Post-deploy browser smoke: opens the `DistributionUrl` from `reports/cdk-outputs.json` (no seams), clicks Start Game and the Ready gate and waits for the live HUD; writes `reports/browser-smoke.json`. Runs in the CI deploy job      |
-| `npm run report`         | Classifies the evidence on disk and writes `reports/evidence.json` and `docs/FINAL-REPORT.md`; exits 1 while any check is `automated-fail`                                                                                              |
-| `npm run test:matrix`    | The 1/5/10/20-bot matrix on both maps on its own                                                                                                                                                                                        |
-| `npm run bench:ai`       | The bot-ai bench on its own (`reports/bot-ai-bench.json`)                                                                                                                                                                               |
-| `npm run verify`         | The gate: `lint && typecheck && test:coverage && build && synth && check:licences && check:seams`, failing fast                                                                                                                         |
+| Script                   | What it does                                                                                                                                                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`            | Vite dev server for the game                                                                                                                                                                                                                     |
+| `npm run lint`           | `eslint . --max-warnings 0 && prettier --check .`                                                                                                                                                                                                |
+| `npm run typecheck`      | `tsc --noEmit` (strict, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`)                                                                                                                                                                      |
+| `npm test`               | Vitest (Node environment, at most 2 workers)                                                                                                                                                                                                     |
+| `npm run test:coverage`  | Vitest with v8 coverage; fails below 80 % lines on any glob listed in `vitest.config.ts` (`src/core/**`, `src/maps/**`, `src/physics/**`, `src/nav/**`, `src/sim/player/**`, `src/weapons/**`, `src/combat/**`, `src/ui/**` and others)          |
+| `npm run check:imports`  | The import-graph and ring-lint tests on their own (`tests/arch`)                                                                                                                                                                                 |
+| `npm run build`          | `vite build` into `dist/`                                                                                                                                                                                                                        |
+| `npm run build:web`      | `vite build`; called by CDK local bundling with `--outDir` during `cdk deploy`                                                                                                                                                                   |
+| `npm run synth`          | Infra typecheck, then offline `cdk synth --strict` on the prebuilt `dist/` (no credentials)                                                                                                                                                      |
+| `npm run check:licences` | Licence, pinning, asset, secret and `dist/` checks; writes `reports/licences.json`                                                                                                                                                               |
+| `npm run audit`          | Advisory `npm audit` of production dependencies into `reports/audit.json` (not part of the gate)                                                                                                                                                 |
+| `npm run check:seams`    | Fails if test-seam markers or a `dev*` chunk reach `dist/`, or the entry chunk exceeds 900 KB minified / 200 KB brotli; writes `reports/app-shell-bundle.json`                                                                                   |
+| `npm run check:assets`   | Asset gate: total ≤ 30 MB, per-map download ≤ 24 MB, texture inventory, extension partition, Basis transcoder byte identity, GLBs without images, KTX2 full mips, kit chunk size; writes `reports/asset-budget.json`                             |
+| `npm run build:test`     | `vite build --mode test --outDir dist-test`: the e2e bundle with test seams (never deployed, not in the gate)                                                                                                                                    |
+| `npm run e2e`            | `build:test`, then Playwright headless Chromium plays a seeded round and Play Again on both maps against `dist-test/` and writes `reports/e2e.json` (not in the gate; see below)                                                                 |
+| `npm run smoke`          | Post-deploy smoke checks SM-1..SM-9 (SM-4c checks every binary asset of the local `dist/`) against `reports/cdk-outputs.json`, or blocked mode with the missing items; `-- --precheck` writes the credential precheck to `reports/precheck.json` |
+| `npm run smoke:browser`  | Post-deploy browser smoke: opens the `DistributionUrl` from `reports/cdk-outputs.json` (no seams), clicks Start Game and the Ready gate and waits for the live HUD; writes `reports/browser-smoke.json`. Runs in the CI deploy job               |
+| `npm run report`         | Classifies the evidence on disk and writes `reports/evidence.json` and `docs/FINAL-REPORT.md`; exits 1 while any check is `automated-fail`                                                                                                       |
+| `npm run test:matrix`    | The 1/5/10/20-bot matrix on both maps on its own                                                                                                                                                                                                 |
+| `npm run bench:ai`       | The bot-ai bench on its own (`reports/bot-ai-bench.json`)                                                                                                                                                                                        |
+| `npm run verify`         | The gate: `lint && typecheck && test:coverage && build && synth && check:licences && check:seams && check:assets`, failing fast                                                                                                                  |
 
 ## Controls
 
@@ -93,7 +94,7 @@ The check register in `scripts/verification/checks.ts` lists every spec §13 che
 
 ## Verify gate
 
-`npm run verify` runs offline after `npm ci`, needs no credentials and makes no AWS calls. Steps are only ever **appended**: hosting-infra inserted `synth` (prebuilt `cdk synth --strict`) after `build`, and app-shell appends `check:seams`. Deploy (`npx cdk deploy --all`) is a separate, manual, credentialed step described in [infra/README.md](infra/README.md). `tests/scripts/verify-script.test.ts` fails if the chain uses anything but `&&` or reorders the foundation steps.
+`npm run verify` runs offline after `npm ci`, needs no credentials and makes no AWS calls. Steps are only ever **appended**: hosting-infra inserted `synth` (prebuilt `cdk synth --strict`) after `build`, app-shell appends `check:seams`, and the graphics uplift appends `check:assets`. Deploy (`npx cdk deploy --all`) is a separate, manual, credentialed step described in [infra/README.md](infra/README.md). `tests/scripts/verify-script.test.ts` fails if the chain uses anything but `&&` or reorders the foundation steps.
 
 GitHub Actions (`.github/workflows/ci.yml`) runs the same `npm ci && npm run verify` without credentials on every pull request and push to `main`, runs `npm run e2e` alongside it, and on a push to `main` deploys the verified bundle through a GitHub OIDC role and runs both smoke checks. Setup (account, region, deploy role, CDK bootstrap) is in [infra/README.md](infra/README.md#github-actions-cicd).
 
@@ -142,6 +143,17 @@ GitHub Actions (`.github/workflows/ci.yml`) runs the same `npm ci && npm run ver
 - Versions in `package.json` are exact and `package-lock.json` is committed. Production licences must be MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, 0BSD or ISC.
 - Binary assets (images, models, audio, fonts) must be listed in `assets-provenance.json` as `original` or `procedural` with an author. The game is procedural, so the list is empty.
 
+## Graphics assets
+
+The graphics uplift adds authored CC0 assets on top of the procedural renderer. Every asset is optional: a failed download, decode or validation falls back to the procedural visual for that item only, and the round still starts.
+
+- `assets/` holds the committed binaries: `models/*.glb` (meshopt-compressed, quantised, no embedded images), `textures/*.ktx2` and `sky/*.ktx2` (Basis, full mip chains). Each file is listed in `assets-provenance.json` (v2: `cc0` entries need licence `CC0-1.0`, an author and an https source on polyhaven.com, ambientcg.com, kenney.nl or quaternius.com). Credits are in [docs/CREDITS.md](docs/CREDITS.md).
+- `tools/asset-pipeline/` is the offline pipeline (gltf-transform, meshoptimizer, sharp, KTX-Software `toktx`). It is not part of verify; see [docs/ASSETS.md](docs/ASSETS.md). It also generates `src/maps/prop-catalog.data.ts`, `src/render/assets/manifest.data.ts` and `texture-sets.data.ts`.
+- Loading has a fifth step, **Assets**, between Navigation and Bots. Downloads start with the map step (at most 4 at once, one retry for network errors, 5xx and 429) and are applied after the map is built. Rebuilds, Play Again and preset changes fetch nothing.
+- `src/app/main.ts` owns the fetch and the single memoised `import('../render/assets/kit')`; only `src/render/assets/kit.ts` imports `three/addons` (GLTFLoader, KTX2Loader, the meshopt decoder and SkeletonUtils). Bots are skinned CC0 characters animated by a direct track sampler (no AnimationMixer); the 9-part box rig is their shadow proxy on Medium and High and the fallback when the model fails.
+- Large props (rocks, debris, vehicles, structures) collide: their boxes are map data in `src/maps`, generated from the catalog, never read from a GLB. Vegetation is visual only and stays under 0.6 m inside the play space.
+- The CSP adds `'unsafe-eval'` and `'wasm-unsafe-eval'` to `script-src` and `worker-src 'self' blob:` (single source: `infra/lib/policy.ts`). `'unsafe-eval'` is needed because three's Basis transcoder builds functions with `new Function` in its worker.
+
 ## Graphics presets
 
 The renderer never changes quality on its own; the player's preset always wins. Low is the recommended preset for 15 and 20 bots. Values come from `PRESETS` in `src/render/presets.ts` (three 0.187 removed PCF-soft shadows, so every preset uses PCF and High uses a wider kernel).
@@ -151,12 +163,20 @@ The renderer never changes quality on its own; the player's preset always wins. 
 | Pixel ratio                  | min(dpr, 1) × 0.75 | min(dpr, 1.5)    | min(dpr, 2) |
 | Sun shadow map               | 1024 px (map only) | 2048 px          | 4096 px     |
 | Local shadow lights          | 0                  | 1                | 2           |
-| Bots cast shadows            | no                 | yes              | yes         |
-| Max shadow-casting objects   | 16                 | 24               | 24          |
+| Bots cast shadows            | no                 | yes (proxy rig)  | yes (proxy) |
+| Max shadow-casting objects   | 16                 | 24               | 32          |
 | Anisotropy                   | 1                  | 4                | 8           |
 | Draw distance                | 150 m              | 200 m            | 300 m       |
 | Particles (cap / per impact) | 64 / 6             | 192 / 8          | 384 / 12    |
 | Decals / tracers             | 32 / 16            | 64 / 32          | 128 / 48    |
 | Muzzle-flash light           | off                | off              | on          |
+| Largest texture mip          | 1024 px            | 2048 px          | 2048 px     |
+| Dressing density / cap       | 0.35 / 1,500       | 0.7 / 4,000      | 1.0 / 8,000 |
+| Scatter draw distance        | 45 m               | 70 m             | 100 m       |
+| Prop / bot LOD0 distance     | 15 m / LOD1 only   | 25 m / 25 m      | 40 m / 40 m |
+| Bot animation rate           | 15 Hz              | 30 Hz            | 60 Hz       |
+| Near-camera detail layer     | off                | off (cut)        | off (cut)   |
+| World draw calls / triangles | 80 / 300k          | 100 / 600k       | 120 / 1M    |
+| Texture budget               | 160 MB             | 320 MB           | 512 MB      |
 
 Renderer evidence: `tests/render/render-bench.test.ts` writes `reports/render-bench.json` (CPU-side timings in Node, indirect; only 10× ceilings are asserted). GPU frame time is manual-pending. Manual browser check (target hardware, Chrome desktop, 1080p): for each preset with 5 and 20 bots, confirm shadows on Low, the death topple, muzzle flash and recoil kick, and read FPS from the dev profiler overlay; then force a context loss with the `WEBGL_lose_context` extension and confirm the round pauses and resumes after restore.

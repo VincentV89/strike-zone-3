@@ -213,7 +213,9 @@ describe('app-shell lint block (SD-AS-05..07)', () => {
     const dynamic = "export const a = import('./x');\n";
     expect(await ruleIds(storage, 'src/app/main.ts')).toEqual([]);
     expect(await ruleIds(dynamic, 'src/app/main.ts')).toEqual([]);
-    expect(await ruleIds("export const a = fetch('x');\n", 'src/app/main.ts')).toContain(
+    // main.ts also owns the asset fetch (BR-G-01); other network globals stay banned.
+    expect(await ruleIds("export const a = fetch('x');\n", 'src/app/main.ts')).toEqual([]);
+    expect(await ruleIds("export const a = new WebSocket('x');\n", 'src/app/main.ts')).toContain(
       'no-restricted-globals',
     );
     const listen =

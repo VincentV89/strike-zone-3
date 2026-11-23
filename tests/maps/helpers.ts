@@ -6,13 +6,11 @@ import type { MapId } from '../../src/contracts';
 import { getMap, type MapDataIssueCode, type MapDefinition } from '../../src/maps';
 
 /** Removes readonly at every level so tests can mutate a copy. */
-export type DeepMutable<T> = T extends (infer U)[]
-  ? DeepMutable<U>[]
-  : T extends readonly (infer U)[]
-    ? DeepMutable<U>[]
-    : T extends object
-      ? { -readonly [K in keyof T]: DeepMutable<T[K]> }
-      : T;
+export type DeepMutable<T> = T extends readonly unknown[]
+  ? { -readonly [K in keyof T]: DeepMutable<T[K]> }
+  : T extends object
+    ? { -readonly [K in keyof T]: DeepMutable<T[K]> }
+    : T;
 
 export type MutableMap = DeepMutable<MapDefinition>;
 
@@ -57,6 +55,14 @@ export const ALL_ISSUE_CODES = [
   'maps/feature-missing',
   'maps/feature-unbacked',
   'maps/lighting-invalid',
+  'maps/prop-unknown-model',
+  'maps/prop-bad-transform',
+  'maps/prop-near-spawn',
+  'maps/prop-near-cover',
+  'maps/prop-near-hint',
+  'maps/prop-near-ramp',
+  'maps/tall-vegetation-in-play',
+  'maps/dressing-invalid',
 ] as const satisfies readonly MapDataIssueCode[];
 
 /** Compile-time proof that ALL_ISSUE_CODES lists the whole union. */

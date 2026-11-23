@@ -39,7 +39,7 @@ import type {
 } from './types';
 import { groupZones, zoneFindings, type SpawnZone } from './zones';
 
-type ListName = Exclude<MapDataList, 'lighting'>;
+type ListName = Exclude<MapDataList, 'lighting' | 'dressing'>;
 
 interface Ctx {
   readonly def: MapDefinition;
@@ -675,6 +675,125 @@ function phaseFeatures(ctx: Ctx): void {
   });
 }
 
+/** Dressing budgets (BR-G-26). */
+export const DRESSING_BUDGETS = Object.freeze({ props: 200, scatter: 32, backdrop: 48 } as const);
+/** Vegetation inside the play space stays under this height (BR-G-31). */
+export const PLAY_VEGETATION_MAX_M = 0.6;
+/** Backdrop sits between the bounds and this radius (BR-G-33). */
+export const BACKDROP_MAX_M = 140;
+
+function xzGap(
+  b: { min: { x: number; z: number }; max: { x: number; z: number } },
+  x: number,
+  z: number,
+): number {
+  const dx = Math.max(b.min.x - x, 0, x - b.max.x);
+  const dz = Math.max(b.min.z - z, 0, z - b.max.z);
+  return Math.hypot(dx, dz);
+}
+
+/** Phase 11 (BR-G-20..33, graphics uplift): props, scatter and backdrop. */
+function phaseDressing(ctx: Ctx): void {
+  const { def } = ctx;
+  const d = def.dressing;
+  if (d === undefined) return;
+  if (!numbersFinite(d)) {
+    add(ctx, 'maps/non-finite', 'dressing has a non-finite number', 'dressing');
+    return;
+  }
+  for (const [list, limit] of Object.entries(DRESSING_BUDGETS) as [
+    keyof typeof DRESSING_BUDGETS,
+    number,
+  ][]) {
+    if (d[list].length > limit) {
+      add(
+        ctx,
+        'maps/budget-exceeded',
+        `${d[list].length} dressing ${list}; budget ${limit}`,
+        'dressing',
+      );
+      return;
+    }
+  }
+  const catalog = new Map(d.catalog.map((c) => [c.id, c] as const));
+  d.props.forEach((p, i) => {
+    const c = catalog.get(p[0]);
+    if (c === undefined) {
+      add(ctx, 'maps/prop-unknown-model', `prop ${i} names an unknown model`, 'dressing', i);
+      return;
+    }
+    const q = p[4] as number;
+    const okTurn = Number.isInteger(q) && q >= 0 && q <= 3;
+    const okScale = p[5] >= 0.75 && p[5] <= c.maxScale;
+    if (!okTurn || (c.kind !== 'visual' && !okScale) || p[5] <= 0) {
+      add(ctx, 'maps/prop-bad-transform', `prop ${i} has a bad turn or scale`, 'dressing', i);
+    }
+  });
+  for (const r of d.scatter) {
+    const c = catalog.get(r.kind);
+    if (c === undefined) {
+      add(ctx, 'maps/prop-unknown-model', 'scatter names an unknown model', 'dressing');
+      continue;
+    }
+    const h = (c.visualBounds.max[1] ?? 0) * r.scale[1];
+    const inPlay = boxContains(def.bounds, {
+      x: (r.region.min.x + r.region.max.x) / 2,
+      y: r.region.min.y,
+      z: (r.region.min.z + r.region.max.z) / 2,
+    });
+    if (inPlay && h > PLAY_VEGETATION_MAX_M) {
+      add(
+        ctx,
+        'maps/tall-vegetation-in-play',
+        `${r.kind} reaches ${h.toFixed(2)} m in the play space`,
+        'dressing',
+      );
+    }
+  }
+  d.backdrop.forEach((b, i) => {
+    const r = Math.hypot(b.pos.x, b.pos.z);
+    if (!catalog.has(b.model))
+      add(ctx, 'maps/prop-unknown-model', `backdrop ${i} names an unknown model`, 'dressing', i);
+    else if (boxContains(def.bounds, b.pos) || r > BACKDROP_MAX_M) {
+      add(
+        ctx,
+        'maps/dressing-invalid',
+        `backdrop ${i} is not between the bounds and ${BACKDROP_MAX_M} m`,
+        'dressing',
+        i,
+      );
+    }
+  });
+  // Prop clearance (BR-G-23): 1 m from spawns, cover and hints; 2 m from ramp footprints.
+  def.solids.forEach((s, i) => {
+    if (s.prop === undefined || ctx.bad.solids.has(i)) return;
+    if (def.spawns.some((sp) => xzGap(s.box, sp.pos.x, sp.pos.z) < 1)) {
+      add(ctx, 'maps/prop-near-spawn', `prop solid ${i} is within 1 m of a spawn`, 'solids', i);
+    }
+    if (def.cover.some((c) => xzGap(s.box, c.pos.x, c.pos.z) < 1)) {
+      add(
+        ctx,
+        'maps/prop-near-cover',
+        `prop solid ${i} is within 1 m of a cover point`,
+        'solids',
+        i,
+      );
+    }
+    if (def.navHints.some((h) => h.kind !== 'exclude' && xzGap(s.box, h.pos.x, h.pos.z) < 1)) {
+      add(ctx, 'maps/prop-near-hint', `prop solid ${i} is within 1 m of a nav hint`, 'solids', i);
+    }
+    const nearRamp = def.ramps.some(
+      (r) =>
+        s.box.min.x < r.maxX + 2 &&
+        s.box.max.x > r.minX - 2 &&
+        s.box.min.z < r.maxZ + 2 &&
+        s.box.max.z > r.minZ - 2,
+    );
+    if (nearRamp)
+      add(ctx, 'maps/prop-near-ramp', `prop solid ${i} is within 2 m of a ramp`, 'solids', i);
+  });
+}
+
 /**
  * Pure data checks (BR-M-*). Returns [] for a valid map. Never throws for a
  * structurally typed input. Issues are ordered by phase, then list, then index.
@@ -708,5 +827,6 @@ export function checkMapData(def: MapDefinition): readonly MapDataIssue[] {
   phaseCover(ctx);
   phaseHints(ctx);
   phaseFeatures(ctx);
+  phaseDressing(ctx);
   return ctx.issues;
 }

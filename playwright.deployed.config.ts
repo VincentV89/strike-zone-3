@@ -26,7 +26,8 @@ export default defineConfig({
   outputDir: 'reports/playwright',
   workers: 1,
   retries: 1,
-  timeout: 300_000,
+  // LOAD_TIMEOUT 120 s + LIVE_TIMEOUT 300 s + menu and margin.
+  timeout: 540_000,
   reporter: [['list']],
   use: {
     viewport: { width: 1280, height: 720 },

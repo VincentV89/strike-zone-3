@@ -199,6 +199,46 @@ describe('check:licences phase 2 (assets)', () => {
   it('fails an invalid provenance file', () => {
     expect(rules(run(makeRepo({ provenance: '{}' })))).toEqual(['provenance-file-invalid']);
   });
+
+  it('accepts v2 CC0 entries only with CC0-1.0 and an https source on an allowed host (BR-G-80)', () => {
+    const entry = (over: Record<string, unknown>): string =>
+      JSON.stringify([
+        {
+          path: 'assets/models/rock.glb',
+          origin: 'cc0',
+          licence: 'CC0-1.0',
+          author: 'Poly Haven',
+          source: 'https://polyhaven.com/a/rock_07',
+          ...over,
+        },
+      ]);
+    const repo = (prov: string): string =>
+      makeRepo({ files: { 'assets/models/rock.glb': 'glTF' }, provenance: prov });
+    expect(run(repo(entry({}))).failures).toEqual([]);
+    expect(
+      run(repo(entry({ source: 'https://www.quaternius.com/packs/x.html' }))).failures,
+    ).toEqual([]);
+    for (const bad of [
+      { licence: 'CC-BY-4.0' },
+      { source: 'http://polyhaven.com/a/x' },
+      { source: 'https://polyhaven.com.evil.example/a/x' },
+      { source: 'https://evil.example/polyhaven.com' },
+      { author: ' ' },
+      { origin: 'unknown' },
+    ]) {
+      expect(rules(run(repo(entry(bad)))), JSON.stringify(bad)).toEqual(['asset-unattested']);
+    }
+  });
+
+  it('fails a provenance entry whose file is missing, and treats .wasm as an asset', () => {
+    const orphan = makeRepo({
+      provenance: JSON.stringify([{ path: 'assets/gone.ktx2', origin: 'original', author: 'x' }]),
+    });
+    expect(rules(run(orphan))).toEqual(['provenance-orphan']);
+    expect(rules(run(makeRepo({ files: { 'assets/x.wasm': 'asm' } })))).toEqual([
+      'asset-unattested',
+    ]);
+  });
 });
 
 describe('check:licences phase 3 (secrets and policy)', () => {

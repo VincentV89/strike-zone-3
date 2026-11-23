@@ -105,6 +105,9 @@ export interface AppDeps {
   readonly ai?: { readonly senseHz?: number; readonly decideHz?: number };
 }
 
+/** Plain copy of RenderStats for the seams. */
+export type RenderStatsView = Readonly<Record<string, number | boolean | readonly number[]>>;
+
 /** The handle main.ts and the test seams use (SeamTarget plus app-local extras). */
 export interface App {
   start(root: HTMLElement): void;
@@ -114,6 +117,8 @@ export interface App {
   setSeed(seed: number): void;
   fastForward(ticks: number): void;
   diagnostics(): Readonly<Record<string, number>>;
+  /** A copy of the renderer stats (e2e seam: asset fallbacks, env, skinned bots, formats). */
+  renderStats(): RenderStatsView;
   profilerReport(): ProfileReport;
   onFrame(cb: () => void): Unsubscribe;
   /** Test hooks. */
@@ -630,6 +635,10 @@ export function createApp(deps: AppDeps): App {
       loop.fastForward(ticks);
     },
     diagnostics: () => diag.snapshot(),
+    renderStats: () => {
+      const s = renderer.stats();
+      return { ...s, textureFormats: [...s.textureFormats] };
+    },
     profilerReport: () => profiler.report(),
     onFrame(cb) {
       frameListeners.add(cb);

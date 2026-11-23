@@ -1,4 +1,4 @@
-/** Smoke checks SM-1..SM-9 and SM-4b, live and blocked runs (Flow V6, SD-VE-05). */
+/** Smoke checks SM-1..SM-9, SM-4b and SM-4c, live and blocked runs (Flow V6, SD-VE-05). */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -8,8 +8,13 @@ import {
   runSmokeCommand,
   type SmokeRunDeps,
 } from '../../scripts/verification/run-smoke.ts';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { nodeListDistAssets } from '../../scripts/verification/run-smoke.ts';
 import {
   assetPathsOf,
+  BINARY_ASSET_KINDS,
+  binaryAssetProblem,
+  binaryAssetsOf,
   DEEP_ROUTE,
   isDeployedAndVerified,
   MISSING_ASSET,
@@ -45,7 +50,36 @@ const SECURITY = {
   'referrer-policy': 'no-referrer',
 };
 
-type Route = { status: number; headers?: Record<string, string>; body?: string };
+type Route = {
+  status: number;
+  headers?: Record<string, string>;
+  body?: string;
+  bytes?: Uint8Array;
+};
+
+const magicOf = (ext: string): number[] => [
+  ...(BINARY_ASSET_KINDS.find((k) => k.ext === ext)?.magic ?? []),
+];
+/** A served binary of `size` bytes that starts with the kind's magic bytes. */
+const binBytes = (ext: string, size: number): Uint8Array => {
+  const b = new Uint8Array(size);
+  b.set(magicOf(ext));
+  return b;
+};
+const BINARIES = [
+  { path: '/assets/bot-a1.glb', size: 64, type: 'model/gltf-binary', ext: '.glb' },
+  { path: '/assets/rock-b2.ktx2', size: 80, type: 'image/ktx2', ext: '.ktx2' },
+  { path: '/assets/basis_transcoder-c3.wasm', size: 48, type: 'application/wasm', ext: '.wasm' },
+] as const;
+const binRoute = (b: (typeof BINARIES)[number]): Route => ({
+  status: 200,
+  headers: {
+    ...SECURITY,
+    'content-type': b.type,
+    'cache-control': 'public, max-age=31536000, immutable',
+  },
+  bytes: binBytes(b.ext, b.size),
+});
 
 function site(over: Record<string, Route> = {}): {
   fetch: FetchLike;
@@ -73,6 +107,7 @@ function site(over: Record<string, Route> = {}): {
     [`${ORIGIN}${DEEP_ROUTE}`]: html,
     [`${ORIGIN}${MISSING_ASSET}`]: html,
     [`https://${BUCKET}.s3.eu-west-1.amazonaws.com/index.html`]: { status: 403 },
+    ...Object.fromEntries(BINARIES.map((b) => [`${ORIGIN}${b.path}`, binRoute(b)])),
     ...over,
   };
   const seen: { url: string; init: FetchInitLike }[] = [];
@@ -87,6 +122,8 @@ function site(over: Record<string, Route> = {}): {
         status: r.status,
         headers: { get: (n: string) => headers.get(n.toLowerCase()) ?? null },
         text: () => Promise.resolve(r.body ?? ''),
+        arrayBuffer: () =>
+          Promise.resolve((r.bytes ?? new TextEncoder().encode(r.body ?? '')).slice().buffer),
       });
     },
   };
@@ -97,6 +134,7 @@ const target = (over: Partial<SmokeTarget> = {}): SmokeTarget => ({
   region: 'eu-west-1',
   expected: { csp: CSP, permissionsPolicy: PP },
   redeployLog: ' ✅  StrikeZone (no changes)\n',
+  binaryAssets: BINARIES.map((b) => ({ path: b.path, size: b.size })),
   ...over,
 });
 
@@ -115,7 +153,7 @@ const noSleep = {
 };
 
 describe('runSmokeChecks', () => {
-  it('passes SM-1..SM-9 and SM-4b against a correct deployment', async () => {
+  it('passes SM-1..SM-9, SM-4b and SM-4c against a correct deployment', async () => {
     const s = site();
     const out = await runSmokeChecks(target(), {
       fetch: s.fetch,
@@ -128,6 +166,7 @@ describe('runSmokeChecks', () => {
       ['SM-3', true],
       ['SM-4', true],
       ['SM-4b', true],
+      ['SM-4c', true],
       ['SM-5', true],
       ['SM-6', true],
       ['SM-7', true],
@@ -245,6 +284,90 @@ describe('runSmokeChecks', () => {
   });
 });
 
+describe('SM-4c binary assets (monitoring-design-graphics-uplift)', () => {
+  const run = async (over: Record<string, Route>, t: Partial<SmokeTarget> = {}) => {
+    const s = site(over);
+    const out = await runSmokeChecks(target(t), {
+      fetch: s.fetch,
+      sleep: () => Promise.resolve(),
+      aws: stackOk,
+    });
+    return out.find((c) => c.id === 'SM-4c');
+  };
+  const glb = BINARIES[0];
+  const glbUrl = `${ORIGIN}${glb.path}`;
+
+  it('fails when the SPA fallback serves index.html for a missing asset', async () => {
+    const html: Route = {
+      status: 200,
+      headers: { ...SECURITY, 'content-type': 'text/html', 'cache-control': 'no-cache' },
+      body: INDEX,
+    };
+    const r = await run({ [glbUrl]: html });
+    expect(r?.pass).toBe(false);
+    expect(r?.observed).toContain(`${glb.path} content-type text/html`);
+  });
+
+  it('names a wrong cache, missing nosniff, wrong length and wrong magic', () => {
+    const ok = binRoute(glb);
+    const got = (route: Route) => {
+      const h = new Map(Object.entries(route.headers ?? {}));
+      return {
+        status: route.status,
+        header: (n: string) => h.get(n) ?? '',
+        bytes: route.bytes ?? null,
+      };
+    };
+    const a = { path: glb.path, size: glb.size };
+    expect(binaryAssetProblem(a, got(ok))).toBeNull();
+    expect(
+      binaryAssetProblem(
+        a,
+        got({ ...ok, headers: { ...ok.headers, 'cache-control': 'no-cache' } }),
+      ),
+    ).toBe('cache-control');
+    const noSniff = { ...ok.headers };
+    delete noSniff['x-content-type-options'];
+    expect(binaryAssetProblem(a, got({ ...ok, headers: noSniff }))).toBe('nosniff');
+    expect(binaryAssetProblem(a, got({ ...ok, bytes: binBytes('.glb', 10) }))).toBe(
+      'length 10 != 64',
+    );
+    expect(binaryAssetProblem(a, got({ ...ok, bytes: new Uint8Array(64) }))).toBe('magic bytes');
+    expect(binaryAssetProblem(a, got({ ...ok, status: 403 }))).toBe('403');
+    expect(binaryAssetProblem(a, got({ ...ok, bytes: undefined }))).toBe('no body bytes');
+  });
+
+  it('is not verified without a local dist/, and fails on an empty one', async () => {
+    expect(await run({}, { binaryAssets: null })).toMatchObject({
+      pass: false,
+      notVerified: true,
+    });
+    expect((await run({}, { binaryAssets: [] }))?.pass).toBe(false);
+  });
+
+  it('lists only safe-named .glb, .ktx2 and .wasm files of dist/assets, sorted', () => {
+    expect(
+      binaryAssetsOf([
+        { name: 'z.ktx2', size: 2 },
+        { name: 'index-a.js', size: 9 },
+        { name: 'a.glb', size: 1 },
+        { name: 'bad name.glb', size: 1 },
+        { name: 't.wasm', size: 3 },
+      ]),
+    ).toEqual([
+      { path: '/assets/a.glb', size: 1 },
+      { path: '/assets/t.wasm', size: 3 },
+      { path: '/assets/z.ktx2', size: 2 },
+    ]);
+    const root = tmpRoot();
+    expect(nodeListDistAssets(root)).toBeNull();
+    mkdirSync(join(root, 'dist/assets'), { recursive: true });
+    writeFileSync(join(root, 'dist/assets/m-1.glb'), binBytes('.glb', 12));
+    writeFileSync(join(root, 'dist/assets/index-1.js'), 'x');
+    expect(nodeListDistAssets(root)).toEqual([{ path: '/assets/m-1.glb', size: 12 }]);
+  });
+});
+
 describe('npm run smoke runs', () => {
   const blockedEnv = {
     PATH: '/nowhere',
@@ -334,7 +457,9 @@ describe('npm run smoke runs', () => {
       }),
     );
     put(root, 'reports/redeploy.log', 'StrikeZone (no changes)');
-    const r = await runSmokeCommand(d(root));
+    const r = await runSmokeCommand(
+      d(root, { listDistAssets: () => BINARIES.map((b) => ({ path: b.path, size: b.size })) }),
+    );
     expect(r.mode).toBe('live');
     expect(r.url).toBe(ORIGIN);
     expect(isDeployedAndVerified(r.checks)).toBe(true);

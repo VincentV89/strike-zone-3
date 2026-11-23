@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 const eslint = new ESLint();
 const RENDER = 'src/render/__probe__.ts';
 const HOST = 'src/render/gl-host.__probe__.ts';
+const KIT = 'src/render/assets/__probe__.ts';
 
 async function ruleIds(code: string, filePath: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath });
@@ -83,5 +84,60 @@ describe('render lint rules', () => {
     expect(ids).toContain('no-restricted-properties');
     expect(ids).toContain('no-restricted-globals');
     expect(ids.filter((id) => id === 'no-restricted-syntax').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('block C accepts exactly the four kit addons (BR-G-03)', async () => {
+    const ids = await ruleIds(
+      [
+        "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
+        "import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';",
+        "import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';",
+        "import { clone } from 'three/addons/utils/SkeletonUtils.js';",
+        "import type { WebGLRenderer } from 'three';",
+        'export const x: unknown[] = [GLTFLoader, KTX2Loader, MeshoptDecoder, clone];',
+        'export type R = WebGLRenderer;',
+        '',
+      ].join('\n'),
+      KIT,
+    );
+    expect(ids).toEqual([]);
+  });
+
+  it('block C rejects other loaders and addons, and keeps the inherited bans', async () => {
+    const imports = await ruleIds(
+      [
+        "import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';",
+        "import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';",
+        "import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';",
+        "import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';",
+        'export const x: unknown[] = [OBJLoader, DRACOLoader, mergeGeometries, FBXLoader];',
+        '',
+      ].join('\n'),
+      KIT,
+    );
+    expect(imports.filter((id) => id === 'no-restricted-imports')).toHaveLength(4);
+    const body = await ruleIds(
+      BANNED_BODY.replace(
+        "  c.addEventListener('webglcontextlost', () => undefined);\n",
+        '',
+      ).replace('  return [r,', "  JSON.parse('1');\n  return [r,"),
+      KIT,
+    );
+    expect(body).toContain('no-restricted-globals'); // fetch, localStorage, window, Date
+    expect(body.filter((id) => id === 'no-restricted-properties').length).toBeGreaterThanOrEqual(4);
+    expect(body).toContain('no-restricted-syntax'); // import(), import.meta.env
+  });
+
+  it('a GLTFLoader import outside kit.ts is still rejected (block A)', async () => {
+    const ids = await ruleIds(
+      [
+        "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
+        'export const x = GLTFLoader;',
+        '',
+      ].join('\n'),
+      RENDER,
+    );
+    expect(ids).toContain('no-restricted-imports');
+    expect(ids).toContain('no-restricted-syntax');
   });
 });

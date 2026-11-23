@@ -56,6 +56,12 @@ describe('AppState machine rows', () => {
     expect(m.errorText).toBe('x');
   });
 
+  it('AS-T05 with step assets: the error marks assets and retry restarts at map (BR-G-14a)', () => {
+    const m = next(model('loading'), { kind: 'loading-failed', step: 'assets', message: 'x' });
+    expect(m).toMatchObject({ state: 'loading-error', failedStep: 'assets', retryFrom: 'map' });
+    expect(retryStepFor('assets')).toBe('map');
+  });
+
   it('AS-T06 loading → menu on cancel-loading: lock exit, abort, dispose', () => {
     const e = intent({ type: 'cancel-loading' });
     expect(next(model('loading'), e).state).toBe('menu');
@@ -203,6 +209,12 @@ describe('AppState machine rows', () => {
   it('AS-T27 loading + context-lost → loading-error at the current step', () => {
     const m = next(model('loading'), { kind: 'context-lost', step: 'shaders' });
     expect(m).toMatchObject({ state: 'loading-error', failedStep: 'shaders' });
+    expect(m.errorText).toBe(MESSAGES.graphicsReset);
+  });
+
+  it('AS-T27 with step assets: Graphics reset, retry from map (BR-G-14a)', () => {
+    const m = next(model('loading'), { kind: 'context-lost', step: 'assets' });
+    expect(m).toMatchObject({ state: 'loading-error', failedStep: 'assets', retryFrom: 'map' });
     expect(m.errorText).toBe(MESSAGES.graphicsReset);
   });
 

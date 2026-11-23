@@ -1,1 +1,938 @@
-[]
+[
+  {
+    "path": "assets/models/backdrop.glb",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_cliff_02",
+    "note": "pack of namaqualand_cliff_02, mountainside, quiver_tree_01 (geometry simplified, textures split out)"
+  },
+  {
+    "path": "assets/models/bot-soldier.glb",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Quaternius",
+    "source": "https://quaternius.com/packs/ultimatedanimatedcharacter.html",
+    "note": "Soldier_Male + AssaultRifle_1; palette texture; crouch clips derived from SitDown"
+  },
+  {
+    "path": "assets/models/props-common.glb",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_boulder_02",
+    "note": "pack of namaqualand_boulder_02, namaqualand_boulder_05, Barrel_01, wooden_military_crate, old_tyre, cement_bag, rock_07 (geometry simplified, textures split out)"
+  },
+  {
+    "path": "assets/models/props-desert.glb",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/covered_car",
+    "note": "pack of covered_car, dead_tree_trunk_02 (geometry simplified, textures split out)"
+  },
+  {
+    "path": "assets/models/props-industrial.glb",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/barrel_03",
+    "note": "pack of barrel_03, concrete_road_barrier_02, utility_box_02, portable_generator, rusted_wheel_rim_01, cardboard_box_01, propane_tank (geometry simplified, textures split out)"
+  },
+  {
+    "path": "assets/models/vegetation.glb",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/grass_medium_01",
+    "note": "pack of grass_medium_01, shrub_03, weed_plant_02, dry_branches_medium_01 (geometry simplified, textures split out)"
+  },
+  {
+    "path": "assets/models/vm-pistol.glb",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Quaternius",
+    "source": "https://quaternius.com/packs/ultimategun.html",
+    "note": "Pistol_1 (palette texture baked from MTL colours)"
+  },
+  {
+    "path": "assets/models/vm-rifle.glb",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Quaternius",
+    "source": "https://quaternius.com/packs/ultimategun.html",
+    "note": "AssaultRifle_1 (palette texture baked from MTL colours)"
+  },
+  {
+    "path": "assets/models/vm-sniper.glb",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Quaternius",
+    "source": "https://quaternius.com/packs/ultimategun.html",
+    "note": "SniperRifle_1 (palette texture baked from MTL colours)"
+  },
+  {
+    "path": "assets/sky/sky-desert-dusk.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/aarfontein_dusk",
+    "note": "tonemapped HDRI, 2048x1024"
+  },
+  {
+    "path": "assets/sky/sky-warehouse-storm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/quarry_cloudy",
+    "note": "tonemapped HDRI, 2048x1024"
+  },
+  {
+    "path": "assets/textures/tex-adobe-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rough_plaster_brick_04",
+    "note": "PBR set adobe"
+  },
+  {
+    "path": "assets/textures/tex-adobe-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rough_plaster_brick_04",
+    "note": "PBR set adobe"
+  },
+  {
+    "path": "assets/textures/tex-adobe-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rough_plaster_brick_04",
+    "note": "PBR set adobe"
+  },
+  {
+    "path": "assets/textures/tex-barrel-blue-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/barrel_03",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-barrel-blue-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/barrel_03",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-barrel-blue-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/barrel_03",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-barrel-rusty-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/Barrel_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-barrel-rusty-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/Barrel_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-barrel-rusty-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/Barrel_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-bot-soldier-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Quaternius",
+    "source": "https://quaternius.com/packs/ultimatedanimatedcharacter.html",
+    "note": "Soldier_Male + AssaultRifle_1; palette texture; crouch clips derived from SitDown palette"
+  },
+  {
+    "path": "assets/textures/tex-boulder-a-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_boulder_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-boulder-a-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_boulder_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-boulder-a-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_boulder_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-boulder-b-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_boulder_05",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-boulder-b-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_boulder_05",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-boulder-b-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_boulder_05",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-branches-dry-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/dry_branches_medium_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-branches-dry-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/dry_branches_medium_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-branches-dry-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/dry_branches_medium_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-car-covered-0-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/covered_car",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-car-covered-0-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/covered_car",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-car-covered-0-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/covered_car",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-car-covered-1-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/covered_car",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-car-covered-1-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/covered_car",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-car-covered-1-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/covered_car",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-cardboard-box-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/cardboard_box_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-cardboard-box-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/cardboard_box_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-cardboard-box-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/cardboard_box_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-cement-bag-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/cement_bag",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-cement-bag-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/cement_bag",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-cement-bag-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/cement_bag",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-cliff-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_cliff_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-cliff-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_cliff_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-cliff-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/namaqualand_cliff_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-concrete-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/preconcrete_wall_001",
+    "note": "PBR set concrete"
+  },
+  {
+    "path": "assets/textures/tex-concrete-floor-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/worn_concrete_floor",
+    "note": "PBR set concrete-floor"
+  },
+  {
+    "path": "assets/textures/tex-concrete-floor-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/worn_concrete_floor",
+    "note": "PBR set concrete-floor"
+  },
+  {
+    "path": "assets/textures/tex-concrete-floor-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/worn_concrete_floor",
+    "note": "PBR set concrete-floor"
+  },
+  {
+    "path": "assets/textures/tex-concrete-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/preconcrete_wall_001",
+    "note": "PBR set concrete"
+  },
+  {
+    "path": "assets/textures/tex-concrete-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/preconcrete_wall_001",
+    "note": "PBR set concrete"
+  },
+  {
+    "path": "assets/textures/tex-corrugated-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/corrugated_iron_02",
+    "note": "PBR set corrugated"
+  },
+  {
+    "path": "assets/textures/tex-corrugated-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/corrugated_iron_02",
+    "note": "PBR set corrugated"
+  },
+  {
+    "path": "assets/textures/tex-corrugated-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/corrugated_iron_02",
+    "note": "PBR set corrugated"
+  },
+  {
+    "path": "assets/textures/tex-crate-military-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/wooden_military_crate",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-crate-military-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/wooden_military_crate",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-crate-military-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/wooden_military_crate",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-generator-0-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/portable_generator",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-generator-0-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/portable_generator",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-generator-0-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/portable_generator",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-generator-1-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/portable_generator",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-generator-1-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/portable_generator",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-generator-1-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/portable_generator",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-grass-dry-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/grass_medium_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-grass-dry-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/grass_medium_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-grass-dry-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/grass_medium_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-log-dead-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/dead_tree_trunk_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-log-dead-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/dead_tree_trunk_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-log-dead-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/dead_tree_trunk_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-mountain-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/mountainside",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-mountain-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/mountainside",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-mountain-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/mountainside",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-propane-tank-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/propane_tank",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-propane-tank-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/propane_tank",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-propane-tank-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/propane_tank",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-road-barrier-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/concrete_road_barrier_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-road-barrier-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/concrete_road_barrier_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-road-barrier-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/concrete_road_barrier_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-rust-metal-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rusty_metal_02",
+    "note": "PBR set rust-metal"
+  },
+  {
+    "path": "assets/textures/tex-rust-metal-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rusty_metal_02",
+    "note": "PBR set rust-metal"
+  },
+  {
+    "path": "assets/textures/tex-rust-metal-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rusty_metal_02",
+    "note": "PBR set rust-metal"
+  },
+  {
+    "path": "assets/textures/tex-sand-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/gravelly_sand",
+    "note": "PBR set sand"
+  },
+  {
+    "path": "assets/textures/tex-sand-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/gravelly_sand",
+    "note": "PBR set sand"
+  },
+  {
+    "path": "assets/textures/tex-sand-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/gravelly_sand",
+    "note": "PBR set sand"
+  },
+  {
+    "path": "assets/textures/tex-sandstone-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/large_sandstone_blocks",
+    "note": "PBR set sandstone"
+  },
+  {
+    "path": "assets/textures/tex-sandstone-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/large_sandstone_blocks",
+    "note": "PBR set sandstone"
+  },
+  {
+    "path": "assets/textures/tex-sandstone-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/large_sandstone_blocks",
+    "note": "PBR set sandstone"
+  },
+  {
+    "path": "assets/textures/tex-shrub-dry-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/shrub_03",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-shrub-dry-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/shrub_03",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-shrub-dry-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/shrub_03",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-stones-small-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rock_07",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-stones-small-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rock_07",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-stones-small-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rock_07",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-tree-quiver-0-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/quiver_tree_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-tree-quiver-0-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/quiver_tree_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-tree-quiver-0-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/quiver_tree_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-tree-quiver-1-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/quiver_tree_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-tree-quiver-1-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/quiver_tree_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-tree-quiver-1-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/quiver_tree_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-tyre-old-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/old_tyre",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-tyre-old-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/old_tyre",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-tyre-old-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/old_tyre",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-utility-box-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/utility_box_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-utility-box-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/utility_box_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-utility-box-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/utility_box_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-vm-pistol-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Quaternius",
+    "source": "https://quaternius.com/packs/ultimategun.html",
+    "note": "Pistol_1 (palette texture baked from MTL colours) palette"
+  },
+  {
+    "path": "assets/textures/tex-vm-rifle-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Quaternius",
+    "source": "https://quaternius.com/packs/ultimategun.html",
+    "note": "AssaultRifle_1 (palette texture baked from MTL colours) palette"
+  },
+  {
+    "path": "assets/textures/tex-vm-sniper-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Quaternius",
+    "source": "https://quaternius.com/packs/ultimategun.html",
+    "note": "SniperRifle_1 (palette texture baked from MTL colours) palette"
+  },
+  {
+    "path": "assets/textures/tex-weed-low-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/weed_plant_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-weed-low-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/weed_plant_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-weed-low-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/weed_plant_02",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-wheel-rim-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rusted_wheel_rim_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-wheel-rim-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rusted_wheel_rim_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-wheel-rim-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/rusted_wheel_rim_01",
+    "note": "texture"
+  },
+  {
+    "path": "assets/textures/tex-wood-planks-bc.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/wooden_rough_planks",
+    "note": "PBR set wood-planks"
+  },
+  {
+    "path": "assets/textures/tex-wood-planks-n.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/wooden_rough_planks",
+    "note": "PBR set wood-planks"
+  },
+  {
+    "path": "assets/textures/tex-wood-planks-orm.ktx2",
+    "origin": "cc0",
+    "licence": "CC0-1.0",
+    "author": "Poly Haven",
+    "source": "https://polyhaven.com/a/wooden_rough_planks",
+    "note": "PBR set wood-planks"
+  }
+]

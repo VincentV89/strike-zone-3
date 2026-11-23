@@ -31,13 +31,20 @@ export type SolidKind =
   | 'crate'
   | 'barrier' // low concrete or hazard barrier
   | 'container' // ISO shipping container
-  | 'rack'; // storage rack
+  | 'rack' // storage rack
+  // Graphics uplift (BR-G-20): solids generated from large-prop colliders; never walkable.
+  | 'rock'
+  | 'debris'
+  | 'vehicle'
+  | 'structure';
 
 export interface Solid {
   readonly kind: SolidKind;
   readonly box: Readonly<AABB>;
   /** MaterialHint.id; must exist in MapDefinition.materials. */
   readonly material: string;
+  /** Index into dressing.props when the solid was generated from a prop placement (BR-G-20). */
+  readonly prop?: number;
 }
 
 /** The horizontal direction in which the ramp surface rises. */
@@ -137,6 +144,97 @@ export interface MaterialHint {
   readonly metalness: number;
   /** World-space metres covered by one texture repeat. */
   readonly repeatM: number;
+  /** Authored PBR set used once its three textures load; otherwise the recipe applies (BR-G-70). */
+  readonly pbr?: TextureSetKey;
+  /** Multiply the PBR base colour by `base` (painted containers). */
+  readonly pbrTint?: boolean;
+}
+
+/** PBR set ids; the renderer resolves them (TEXTURE_SETS). */
+export type TextureSetKey =
+  | 'sand'
+  | 'sandstone'
+  | 'adobe'
+  | 'wood-planks'
+  | 'concrete'
+  | 'concrete-floor'
+  | 'corrugated'
+  | 'rust-metal';
+
+/** Photo sky ids (FD-G-Q2); the renderer resolves `sky-<id>`. */
+export type SkyKey = 'desert-dusk' | 'warehouse-storm';
+
+/** Mood lighting over the procedural baseline (BR-G-60..65). */
+export interface AtmosphereDef {
+  readonly sky: SkyKey;
+  /** Radians about +Y applied to the sky and environment. */
+  readonly skyRotation: number;
+  /** Tone-mapping exposure. */
+  readonly exposure: number;
+  /** Scene environment intensity from the PMREM sky. */
+  readonly envIntensity: number;
+  /** Exponential fog (colour, density per metre). */
+  readonly fogExp2: { readonly colour: number; readonly density: number };
+  /** Hemisphere intensity multiplier while the environment map is active. */
+  readonly hemiScaleWithEnv: number;
+  /** Sun intensity multiplier for the mood (overcast dusk, storm). */
+  readonly sunScale: number;
+}
+
+export type PropKind = 'rock' | 'debris' | 'vehicle' | 'structure' | 'visual';
+export type ModelPackKey =
+  'props-common' | 'props-desert' | 'props-industrial' | 'vegetation' | 'backdrop';
+
+/** One prop model (generated src/maps/prop-catalog.data.ts). Model space: feet at the origin, +Y up. */
+export interface PropCatalogEntry {
+  readonly id: string;
+  readonly asset: ModelPackKey;
+  /** Top-level node name in the pack; equals id (BR-G-86). */
+  readonly node: string;
+  readonly lods: 1 | 2;
+  readonly kind: PropKind;
+  /** Model-space boxes; empty for 'visual'. */
+  readonly colliders: readonly {
+    readonly min: readonly number[];
+    readonly max: readonly number[];
+  }[];
+  readonly visualBounds: { readonly min: readonly number[]; readonly max: readonly number[] };
+  readonly maxScale: number;
+}
+
+/** [model, x, y, z, yawQuarter, scale]; blocking props turn in quarter turns only (BR-G-21). */
+export type PropPlacement = readonly [
+  model: string,
+  x: number,
+  y: number,
+  z: number,
+  yawQuarter: 0 | 1 | 2 | 3,
+  scale: number,
+];
+
+/** Deterministic scatter of a visual model over ground (BR-G-32). */
+export interface ScatterRegion {
+  readonly kind: string;
+  readonly region: Readonly<AABB>;
+  /** Instances at density 1. */
+  readonly count: number;
+  readonly seed: number;
+  readonly scale: readonly [number, number];
+}
+
+export interface BackdropItem {
+  readonly model: string;
+  readonly pos: Readonly<Vec3>;
+  readonly yaw: number;
+  readonly scale: number;
+}
+
+export interface DressingDef {
+  readonly props: readonly PropPlacement[];
+  readonly scatter: readonly ScatterRegion[];
+  readonly backdrop: readonly BackdropItem[];
+  /** Catalog entries the map uses, copied in so consumers need no runtime map-data import. */
+  readonly catalog: readonly PropCatalogEntry[];
 }
 
 export interface LocalLight {
@@ -164,6 +262,8 @@ export interface LightingDef {
   readonly background: number;
   readonly fog: { readonly colour: number; readonly near: number; readonly far: number } | null;
   readonly locals: readonly LocalLight[];
+  /** Graphics uplift mood (optional; absent = today's look). */
+  readonly atmosphere?: AtmosphereDef;
 }
 
 export interface MapDefinition {
@@ -180,6 +280,8 @@ export interface MapDefinition {
   readonly features: readonly MapFeatureTag[];
   readonly lighting: LightingDef;
   readonly materials: readonly MaterialHint[];
+  /** Visual layer over the layout (optional; absent = today's look). */
+  readonly dressing?: DressingDef;
 }
 
 export type MapDataIssueCode =
@@ -212,10 +314,26 @@ export type MapDataIssueCode =
   | 'maps/patrol-count'
   | 'maps/feature-missing'
   | 'maps/feature-unbacked'
-  | 'maps/lighting-invalid';
+  | 'maps/lighting-invalid'
+  | 'maps/prop-unknown-model'
+  | 'maps/prop-bad-transform'
+  | 'maps/prop-near-spawn'
+  | 'maps/prop-near-cover'
+  | 'maps/prop-near-hint'
+  | 'maps/prop-near-ramp'
+  | 'maps/tall-vegetation-in-play'
+  | 'maps/dressing-invalid';
 
 export type MapDataList =
-  'solids' | 'ramps' | 'spawns' | 'cover' | 'navHints' | 'features' | 'materials' | 'lighting';
+  | 'solids'
+  | 'ramps'
+  | 'spawns'
+  | 'cover'
+  | 'navHints'
+  | 'features'
+  | 'materials'
+  | 'lighting'
+  | 'dressing';
 
 /**
  * One finding from checkMapData. `index` points into the list named by `list`.

@@ -1,0 +1,2355 @@
+{
+  "manifest": [
+    {
+      "key": "sky-desert-dusk",
+      "file": "assets/sky/sky-desert-dusk.ktx2",
+      "kind": "sky",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 2048
+    },
+    {
+      "key": "sky-warehouse-storm",
+      "file": "assets/sky/sky-warehouse-storm.ktx2",
+      "kind": "sky",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 2048
+    },
+    {
+      "key": "tex-sand-bc",
+      "file": "assets/textures/tex-sand-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-sand-n",
+      "file": "assets/textures/tex-sand-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-sand-orm",
+      "file": "assets/textures/tex-sand-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-sandstone-bc",
+      "file": "assets/textures/tex-sandstone-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-sandstone-n",
+      "file": "assets/textures/tex-sandstone-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-sandstone-orm",
+      "file": "assets/textures/tex-sandstone-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-adobe-bc",
+      "file": "assets/textures/tex-adobe-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-adobe-n",
+      "file": "assets/textures/tex-adobe-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-adobe-orm",
+      "file": "assets/textures/tex-adobe-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-wood-planks-bc",
+      "file": "assets/textures/tex-wood-planks-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-wood-planks-n",
+      "file": "assets/textures/tex-wood-planks-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-wood-planks-orm",
+      "file": "assets/textures/tex-wood-planks-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-concrete-bc",
+      "file": "assets/textures/tex-concrete-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-concrete-n",
+      "file": "assets/textures/tex-concrete-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-concrete-orm",
+      "file": "assets/textures/tex-concrete-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-concrete-floor-bc",
+      "file": "assets/textures/tex-concrete-floor-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-concrete-floor-n",
+      "file": "assets/textures/tex-concrete-floor-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-concrete-floor-orm",
+      "file": "assets/textures/tex-concrete-floor-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-corrugated-bc",
+      "file": "assets/textures/tex-corrugated-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-corrugated-n",
+      "file": "assets/textures/tex-corrugated-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-corrugated-orm",
+      "file": "assets/textures/tex-corrugated-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-rust-metal-bc",
+      "file": "assets/textures/tex-rust-metal-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-rust-metal-n",
+      "file": "assets/textures/tex-rust-metal-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-rust-metal-orm",
+      "file": "assets/textures/tex-rust-metal-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-boulder-a-bc",
+      "file": "assets/textures/tex-boulder-a-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-boulder-a-n",
+      "file": "assets/textures/tex-boulder-a-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-boulder-a-orm",
+      "file": "assets/textures/tex-boulder-a-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-boulder-b-bc",
+      "file": "assets/textures/tex-boulder-b-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-boulder-b-n",
+      "file": "assets/textures/tex-boulder-b-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-boulder-b-orm",
+      "file": "assets/textures/tex-boulder-b-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-barrel-rusty-bc",
+      "file": "assets/textures/tex-barrel-rusty-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-barrel-rusty-n",
+      "file": "assets/textures/tex-barrel-rusty-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-barrel-rusty-orm",
+      "file": "assets/textures/tex-barrel-rusty-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-barrel-blue-bc",
+      "file": "assets/textures/tex-barrel-blue-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-barrel-blue-n",
+      "file": "assets/textures/tex-barrel-blue-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-barrel-blue-orm",
+      "file": "assets/textures/tex-barrel-blue-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-crate-military-bc",
+      "file": "assets/textures/tex-crate-military-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-crate-military-n",
+      "file": "assets/textures/tex-crate-military-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-crate-military-orm",
+      "file": "assets/textures/tex-crate-military-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-car-covered-0-bc",
+      "file": "assets/textures/tex-car-covered-0-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-car-covered-0-n",
+      "file": "assets/textures/tex-car-covered-0-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-car-covered-0-orm",
+      "file": "assets/textures/tex-car-covered-0-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-car-covered-1-bc",
+      "file": "assets/textures/tex-car-covered-1-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-car-covered-1-n",
+      "file": "assets/textures/tex-car-covered-1-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-car-covered-1-orm",
+      "file": "assets/textures/tex-car-covered-1-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-road-barrier-bc",
+      "file": "assets/textures/tex-road-barrier-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-road-barrier-n",
+      "file": "assets/textures/tex-road-barrier-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-road-barrier-orm",
+      "file": "assets/textures/tex-road-barrier-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-utility-box-bc",
+      "file": "assets/textures/tex-utility-box-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-utility-box-n",
+      "file": "assets/textures/tex-utility-box-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-utility-box-orm",
+      "file": "assets/textures/tex-utility-box-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-generator-0-bc",
+      "file": "assets/textures/tex-generator-0-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-generator-0-n",
+      "file": "assets/textures/tex-generator-0-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-generator-0-orm",
+      "file": "assets/textures/tex-generator-0-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-generator-1-bc",
+      "file": "assets/textures/tex-generator-1-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-generator-1-n",
+      "file": "assets/textures/tex-generator-1-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-generator-1-orm",
+      "file": "assets/textures/tex-generator-1-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-log-dead-bc",
+      "file": "assets/textures/tex-log-dead-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-log-dead-n",
+      "file": "assets/textures/tex-log-dead-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-log-dead-orm",
+      "file": "assets/textures/tex-log-dead-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "desert-compound"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-tyre-old-bc",
+      "file": "assets/textures/tex-tyre-old-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-tyre-old-n",
+      "file": "assets/textures/tex-tyre-old-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-tyre-old-orm",
+      "file": "assets/textures/tex-tyre-old-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-cement-bag-bc",
+      "file": "assets/textures/tex-cement-bag-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-cement-bag-n",
+      "file": "assets/textures/tex-cement-bag-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-cement-bag-orm",
+      "file": "assets/textures/tex-cement-bag-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-wheel-rim-bc",
+      "file": "assets/textures/tex-wheel-rim-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-wheel-rim-n",
+      "file": "assets/textures/tex-wheel-rim-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-wheel-rim-orm",
+      "file": "assets/textures/tex-wheel-rim-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-cardboard-box-bc",
+      "file": "assets/textures/tex-cardboard-box-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-cardboard-box-n",
+      "file": "assets/textures/tex-cardboard-box-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-cardboard-box-orm",
+      "file": "assets/textures/tex-cardboard-box-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-propane-tank-bc",
+      "file": "assets/textures/tex-propane-tank-bc.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-propane-tank-n",
+      "file": "assets/textures/tex-propane-tank-n.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-propane-tank-orm",
+      "file": "assets/textures/tex-propane-tank-orm.ktx2",
+      "kind": "texture",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-stones-small-bc",
+      "file": "assets/textures/tex-stones-small-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-stones-small-n",
+      "file": "assets/textures/tex-stones-small-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-stones-small-orm",
+      "file": "assets/textures/tex-stones-small-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-grass-dry-bc",
+      "file": "assets/textures/tex-grass-dry-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-grass-dry-n",
+      "file": "assets/textures/tex-grass-dry-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-grass-dry-orm",
+      "file": "assets/textures/tex-grass-dry-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-shrub-dry-bc",
+      "file": "assets/textures/tex-shrub-dry-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-shrub-dry-n",
+      "file": "assets/textures/tex-shrub-dry-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-shrub-dry-orm",
+      "file": "assets/textures/tex-shrub-dry-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-weed-low-bc",
+      "file": "assets/textures/tex-weed-low-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-weed-low-n",
+      "file": "assets/textures/tex-weed-low-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-weed-low-orm",
+      "file": "assets/textures/tex-weed-low-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-branches-dry-bc",
+      "file": "assets/textures/tex-branches-dry-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-branches-dry-n",
+      "file": "assets/textures/tex-branches-dry-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-branches-dry-orm",
+      "file": "assets/textures/tex-branches-dry-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-cliff-bc",
+      "file": "assets/textures/tex-cliff-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-cliff-n",
+      "file": "assets/textures/tex-cliff-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-cliff-orm",
+      "file": "assets/textures/tex-cliff-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-mountain-bc",
+      "file": "assets/textures/tex-mountain-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 1024,
+      "use": "always"
+    },
+    {
+      "key": "tex-mountain-n",
+      "file": "assets/textures/tex-mountain-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-mountain-orm",
+      "file": "assets/textures/tex-mountain-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-tree-quiver-0-bc",
+      "file": "assets/textures/tex-tree-quiver-0-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-tree-quiver-0-n",
+      "file": "assets/textures/tex-tree-quiver-0-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-tree-quiver-0-orm",
+      "file": "assets/textures/tex-tree-quiver-0-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-tree-quiver-1-bc",
+      "file": "assets/textures/tex-tree-quiver-1-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 512,
+      "use": "always"
+    },
+    {
+      "key": "tex-tree-quiver-1-n",
+      "file": "assets/textures/tex-tree-quiver-1-n.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "tex-tree-quiver-1-orm",
+      "file": "assets/textures/tex-tree-quiver-1-orm.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "linear",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "props-common",
+      "file": "assets/models/props-common.glb",
+      "kind": "model",
+      "maps": "all",
+      "maxTriangles": 9903,
+      "requiredNodes": [
+        "boulder-a",
+        "boulder-a_LOD0",
+        "boulder-a_LOD1",
+        "boulder-b",
+        "boulder-b_LOD0",
+        "boulder-b_LOD1",
+        "barrel-rusty",
+        "barrel-rusty_LOD0",
+        "barrel-rusty_LOD1",
+        "crate-military",
+        "crate-military_LOD0",
+        "crate-military_LOD1",
+        "tyre-old",
+        "tyre-old_LOD0",
+        "tyre-old_LOD1",
+        "cement-bag",
+        "cement-bag_LOD0",
+        "cement-bag_LOD1",
+        "stones-small",
+        "stones-small_LOD0",
+        "stones-small_LOD1"
+      ],
+      "requiredClips": [],
+      "textures": {
+        "boulder-a__0": {
+          "bc": "tex-boulder-a-bc",
+          "n": "tex-boulder-a-n",
+          "orm": "tex-boulder-a-orm"
+        },
+        "boulder-b__0": {
+          "bc": "tex-boulder-b-bc",
+          "n": "tex-boulder-b-n",
+          "orm": "tex-boulder-b-orm"
+        },
+        "barrel-rusty__0": {
+          "bc": "tex-barrel-rusty-bc",
+          "n": "tex-barrel-rusty-n",
+          "orm": "tex-barrel-rusty-orm"
+        },
+        "crate-military__0": {
+          "bc": "tex-crate-military-bc",
+          "n": "tex-crate-military-n",
+          "orm": "tex-crate-military-orm"
+        },
+        "tyre-old__0": {
+          "bc": "tex-tyre-old-bc",
+          "n": "tex-tyre-old-n",
+          "orm": "tex-tyre-old-orm"
+        },
+        "cement-bag__0": {
+          "bc": "tex-cement-bag-bc",
+          "n": "tex-cement-bag-n",
+          "orm": "tex-cement-bag-orm"
+        },
+        "stones-small__0": {
+          "bc": "tex-stones-small-bc",
+          "n": "tex-stones-small-n",
+          "orm": "tex-stones-small-orm"
+        }
+      }
+    },
+    {
+      "key": "props-industrial",
+      "file": "assets/models/props-industrial.glb",
+      "kind": "model",
+      "maps": [
+        "industrial-warehouse"
+      ],
+      "maxTriangles": 9881,
+      "requiredNodes": [
+        "barrel-blue",
+        "barrel-blue_LOD0",
+        "barrel-blue_LOD1",
+        "road-barrier",
+        "road-barrier_LOD0",
+        "road-barrier_LOD1",
+        "utility-box",
+        "utility-box_LOD0",
+        "utility-box_LOD1",
+        "generator",
+        "generator_LOD0",
+        "generator_LOD1",
+        "wheel-rim",
+        "wheel-rim_LOD0",
+        "wheel-rim_LOD1",
+        "cardboard-box",
+        "cardboard-box_LOD0",
+        "cardboard-box_LOD1",
+        "propane-tank",
+        "propane-tank_LOD0",
+        "propane-tank_LOD1"
+      ],
+      "requiredClips": [],
+      "textures": {
+        "barrel-blue__0": {
+          "bc": "tex-barrel-blue-bc",
+          "n": "tex-barrel-blue-n",
+          "orm": "tex-barrel-blue-orm"
+        },
+        "road-barrier__0": {
+          "bc": "tex-road-barrier-bc",
+          "n": "tex-road-barrier-n",
+          "orm": "tex-road-barrier-orm"
+        },
+        "utility-box__0": {
+          "bc": "tex-utility-box-bc",
+          "n": "tex-utility-box-n",
+          "orm": "tex-utility-box-orm"
+        },
+        "generator__0": {
+          "bc": "tex-generator-0-bc",
+          "n": "tex-generator-0-n",
+          "orm": "tex-generator-0-orm"
+        },
+        "generator__1": {
+          "bc": "tex-generator-1-bc",
+          "n": "tex-generator-1-n",
+          "orm": "tex-generator-1-orm"
+        },
+        "wheel-rim__0": {
+          "bc": "tex-wheel-rim-bc",
+          "n": "tex-wheel-rim-n",
+          "orm": "tex-wheel-rim-orm"
+        },
+        "cardboard-box__0": {
+          "bc": "tex-cardboard-box-bc",
+          "n": "tex-cardboard-box-n",
+          "orm": "tex-cardboard-box-orm"
+        },
+        "propane-tank__0": {
+          "bc": "tex-propane-tank-bc",
+          "n": "tex-propane-tank-n",
+          "orm": "tex-propane-tank-orm"
+        }
+      }
+    },
+    {
+      "key": "props-desert",
+      "file": "assets/models/props-desert.glb",
+      "kind": "model",
+      "maps": [
+        "desert-compound"
+      ],
+      "maxTriangles": 7861,
+      "requiredNodes": [
+        "car-covered",
+        "car-covered_LOD0",
+        "car-covered_LOD1",
+        "log-dead",
+        "log-dead_LOD0",
+        "log-dead_LOD1"
+      ],
+      "requiredClips": [],
+      "textures": {
+        "car-covered__0": {
+          "bc": "tex-car-covered-0-bc",
+          "n": "tex-car-covered-0-n",
+          "orm": "tex-car-covered-0-orm"
+        },
+        "car-covered__1": {
+          "bc": "tex-car-covered-1-bc",
+          "n": "tex-car-covered-1-n",
+          "orm": "tex-car-covered-1-orm"
+        },
+        "log-dead__0": {
+          "bc": "tex-log-dead-bc",
+          "n": "tex-log-dead-n",
+          "orm": "tex-log-dead-orm"
+        }
+      }
+    },
+    {
+      "key": "vegetation",
+      "file": "assets/models/vegetation.glb",
+      "kind": "model",
+      "maps": "all",
+      "maxTriangles": 4864,
+      "requiredNodes": [
+        "grass-dry",
+        "grass-dry_LOD0",
+        "grass-dry_LOD1",
+        "shrub-dry",
+        "shrub-dry_LOD0",
+        "shrub-dry_LOD1",
+        "weed-low",
+        "weed-low_LOD0",
+        "weed-low_LOD1",
+        "branches-dry",
+        "branches-dry_LOD0",
+        "branches-dry_LOD1"
+      ],
+      "requiredClips": [],
+      "textures": {
+        "grass-dry__0": {
+          "bc": "tex-grass-dry-bc",
+          "n": "tex-grass-dry-n",
+          "orm": "tex-grass-dry-orm"
+        },
+        "shrub-dry__0": {
+          "bc": "tex-shrub-dry-bc",
+          "n": "tex-shrub-dry-n",
+          "orm": "tex-shrub-dry-orm"
+        },
+        "weed-low__0": {
+          "bc": "tex-weed-low-bc",
+          "n": "tex-weed-low-n",
+          "orm": "tex-weed-low-orm"
+        },
+        "branches-dry__0": {
+          "bc": "tex-branches-dry-bc",
+          "n": "tex-branches-dry-n",
+          "orm": "tex-branches-dry-orm"
+        }
+      }
+    },
+    {
+      "key": "backdrop",
+      "file": "assets/models/backdrop.glb",
+      "kind": "model",
+      "maps": "all",
+      "maxTriangles": 11023,
+      "requiredNodes": [
+        "cliff",
+        "cliff_LOD0",
+        "cliff_LOD1",
+        "mountain",
+        "mountain_LOD0",
+        "mountain_LOD1",
+        "tree-quiver",
+        "tree-quiver_LOD0",
+        "tree-quiver_LOD1"
+      ],
+      "requiredClips": [],
+      "textures": {
+        "cliff__0": {
+          "bc": "tex-cliff-bc",
+          "n": "tex-cliff-n",
+          "orm": "tex-cliff-orm"
+        },
+        "mountain__0": {
+          "bc": "tex-mountain-bc",
+          "n": "tex-mountain-n",
+          "orm": "tex-mountain-orm"
+        },
+        "tree-quiver__0": {
+          "bc": "tex-tree-quiver-0-bc",
+          "n": "tex-tree-quiver-0-n",
+          "orm": "tex-tree-quiver-0-orm"
+        },
+        "tree-quiver__1": {
+          "bc": "tex-tree-quiver-1-bc",
+          "n": "tex-tree-quiver-1-n",
+          "orm": "tex-tree-quiver-1-orm"
+        }
+      }
+    },
+    {
+      "key": "tex-vm-rifle-bc",
+      "file": "assets/textures/tex-vm-rifle-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "vm-rifle",
+      "file": "assets/models/vm-rifle.glb",
+      "kind": "model",
+      "maps": "all",
+      "maxTriangles": 15000,
+      "requiredNodes": [
+        "muzzle"
+      ],
+      "requiredClips": [],
+      "textures": {
+        "vm-rifle__0": {
+          "bc": "tex-vm-rifle-bc"
+        }
+      }
+    },
+    {
+      "key": "tex-vm-pistol-bc",
+      "file": "assets/textures/tex-vm-pistol-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "vm-pistol",
+      "file": "assets/models/vm-pistol.glb",
+      "kind": "model",
+      "maps": "all",
+      "maxTriangles": 15000,
+      "requiredNodes": [
+        "muzzle"
+      ],
+      "requiredClips": [],
+      "textures": {
+        "vm-pistol__0": {
+          "bc": "tex-vm-pistol-bc"
+        }
+      }
+    },
+    {
+      "key": "tex-vm-sniper-bc",
+      "file": "assets/textures/tex-vm-sniper-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "vm-sniper",
+      "file": "assets/models/vm-sniper.glb",
+      "kind": "model",
+      "maps": "all",
+      "maxTriangles": 15000,
+      "requiredNodes": [
+        "muzzle"
+      ],
+      "requiredClips": [],
+      "textures": {
+        "vm-sniper__0": {
+          "bc": "tex-vm-sniper-bc"
+        }
+      }
+    },
+    {
+      "key": "tex-bot-soldier-bc",
+      "file": "assets/textures/tex-bot-soldier-bc.ktx2",
+      "kind": "texture",
+      "maps": "all",
+      "colour": "srgb",
+      "maxTexturePx": 256,
+      "use": "always"
+    },
+    {
+      "key": "bot-soldier",
+      "file": "assets/models/bot-soldier.glb",
+      "kind": "model",
+      "maps": "all",
+      "maxTriangles": 5000,
+      "lod1MaxTriangles": 2000,
+      "requiredNodes": [
+        "muzzle",
+        "bot-soldier_LOD0",
+        "bot-soldier_LOD1"
+      ],
+      "requiredClips": [
+        "idle",
+        "walk",
+        "run",
+        "crouch-idle",
+        "crouch-walk",
+        "shoot",
+        "death"
+      ],
+      "textures": {
+        "bot-soldier__0": {
+          "bc": "tex-bot-soldier-bc"
+        }
+      }
+    }
+  ],
+  "catalog": [
+    {
+      "id": "boulder-a",
+      "asset": "props-common",
+      "node": "boulder-a",
+      "lods": 2,
+      "kind": "rock",
+      "colliders": [
+        {
+          "min": [
+            -1.066,
+            0,
+            -0.494
+          ],
+          "max": [
+            1.066,
+            0.794,
+            0.494
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -1.266,
+          0,
+          -0.617
+        ],
+        "max": [
+          1.266,
+          0.883,
+          0.617
+        ]
+      },
+      "maxScale": 2.2,
+      "triangles": [
+        2999,
+        599
+      ],
+      "textures": {
+        "boulder-a__0": {
+          "bc": "tex-boulder-a-bc",
+          "n": "tex-boulder-a-n",
+          "orm": "tex-boulder-a-orm"
+        }
+      }
+    },
+    {
+      "id": "boulder-b",
+      "asset": "props-common",
+      "node": "boulder-b",
+      "lods": 2,
+      "kind": "rock",
+      "colliders": [
+        {
+          "min": [
+            -0.546,
+            0,
+            -0.299
+          ],
+          "max": [
+            0.546,
+            0.484,
+            0.299
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -0.682,
+          0,
+          -0.374
+        ],
+        "max": [
+          0.682,
+          0.538,
+          0.374
+        ]
+      },
+      "maxScale": 3,
+      "triangles": [
+        2400,
+        500
+      ],
+      "textures": {
+        "boulder-b__0": {
+          "bc": "tex-boulder-b-bc",
+          "n": "tex-boulder-b-n",
+          "orm": "tex-boulder-b-orm"
+        }
+      }
+    },
+    {
+      "id": "barrel-rusty",
+      "asset": "props-common",
+      "node": "barrel-rusty",
+      "lods": 2,
+      "kind": "debris",
+      "colliders": [
+        {
+          "min": [
+            -0.232,
+            0,
+            -0.232
+          ],
+          "max": [
+            0.232,
+            0.83,
+            0.232
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -0.282,
+          0,
+          -0.282
+        ],
+        "max": [
+          0.282,
+          0.88,
+          0.282
+        ]
+      },
+      "maxScale": 1.3,
+      "triangles": [
+        1200,
+        304
+      ],
+      "textures": {
+        "barrel-rusty__0": {
+          "bc": "tex-barrel-rusty-bc",
+          "n": "tex-barrel-rusty-n",
+          "orm": "tex-barrel-rusty-orm"
+        }
+      }
+    },
+    {
+      "id": "barrel-blue",
+      "asset": "props-industrial",
+      "node": "barrel-blue",
+      "lods": 2,
+      "kind": "debris",
+      "colliders": [
+        {
+          "min": [
+            -0.267,
+            0,
+            -0.269
+          ],
+          "max": [
+            0.267,
+            0.88,
+            0.269
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -0.317,
+          0,
+          -0.319
+        ],
+        "max": [
+          0.317,
+          0.93,
+          0.319
+        ]
+      },
+      "maxScale": 1.3,
+      "triangles": [
+        999,
+        250
+      ],
+      "textures": {
+        "barrel-blue__0": {
+          "bc": "tex-barrel-blue-bc",
+          "n": "tex-barrel-blue-n",
+          "orm": "tex-barrel-blue-orm"
+        }
+      }
+    },
+    {
+      "id": "crate-military",
+      "asset": "props-common",
+      "node": "crate-military",
+      "lods": 2,
+      "kind": "debris",
+      "colliders": [
+        {
+          "min": [
+            -0.571,
+            0,
+            -0.21
+          ],
+          "max": [
+            0.571,
+            0.418,
+            0.21
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -0.621,
+          0,
+          -0.26
+        ],
+        "max": [
+          0.621,
+          0.465,
+          0.26
+        ]
+      },
+      "maxScale": 1.4,
+      "triangles": [
+        1532,
+        1528
+      ],
+      "textures": {
+        "crate-military__0": {
+          "bc": "tex-crate-military-bc",
+          "n": "tex-crate-military-n",
+          "orm": "tex-crate-military-orm"
+        }
+      }
+    },
+    {
+      "id": "car-covered",
+      "asset": "props-desert",
+      "node": "car-covered",
+      "lods": 2,
+      "kind": "vehicle",
+      "colliders": [
+        {
+          "min": [
+            -0.844,
+            0,
+            -2.14
+          ],
+          "max": [
+            0.844,
+            1.361,
+            2.14
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -0.894,
+          0,
+          -2.19
+        ],
+        "max": [
+          0.894,
+          1.411,
+          2.19
+        ]
+      },
+      "maxScale": 1,
+      "triangles": [
+        4998,
+        1486
+      ],
+      "textures": {
+        "car-covered__0": {
+          "bc": "tex-car-covered-0-bc",
+          "n": "tex-car-covered-0-n",
+          "orm": "tex-car-covered-0-orm"
+        },
+        "car-covered__1": {
+          "bc": "tex-car-covered-1-bc",
+          "n": "tex-car-covered-1-n",
+          "orm": "tex-car-covered-1-orm"
+        }
+      }
+    },
+    {
+      "id": "road-barrier",
+      "asset": "props-industrial",
+      "node": "road-barrier",
+      "lods": 2,
+      "kind": "structure",
+      "colliders": [
+        {
+          "min": [
+            -0.733,
+            0,
+            -0.177
+          ],
+          "max": [
+            0.733,
+            1.062,
+            0.177
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -0.783,
+          0,
+          -0.221
+        ],
+        "max": [
+          0.783,
+          1.112,
+          0.221
+        ]
+      },
+      "maxScale": 1.2,
+      "triangles": [
+        1500,
+        296
+      ],
+      "textures": {
+        "road-barrier__0": {
+          "bc": "tex-road-barrier-bc",
+          "n": "tex-road-barrier-n",
+          "orm": "tex-road-barrier-orm"
+        }
+      }
+    },
+    {
+      "id": "utility-box",
+      "asset": "props-industrial",
+      "node": "utility-box",
+      "lods": 2,
+      "kind": "structure",
+      "colliders": [
+        {
+          "min": [
+            -0.41,
+            0,
+            -0.173
+          ],
+          "max": [
+            0.41,
+            1.07,
+            0.173
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -0.46,
+          0,
+          -0.216
+        ],
+        "max": [
+          0.46,
+          1.12,
+          0.216
+        ]
+      },
+      "maxScale": 1.3,
+      "triangles": [
+        1199,
+        482
+      ],
+      "textures": {
+        "utility-box__0": {
+          "bc": "tex-utility-box-bc",
+          "n": "tex-utility-box-n",
+          "orm": "tex-utility-box-orm"
+        }
+      }
+    },
+    {
+      "id": "generator",
+      "asset": "props-industrial",
+      "node": "generator",
+      "lods": 2,
+      "kind": "debris",
+      "colliders": [
+        {
+          "min": [
+            -0.359,
+            0,
+            -0.232
+          ],
+          "max": [
+            0.359,
+            0.527,
+            0.232
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -0.409,
+          0,
+          -0.282
+        ],
+        "max": [
+          0.409,
+          0.577,
+          0.282
+        ]
+      },
+      "maxScale": 1.4,
+      "triangles": [
+        4155,
+        4164
+      ],
+      "textures": {
+        "generator__0": {
+          "bc": "tex-generator-0-bc",
+          "n": "tex-generator-0-n",
+          "orm": "tex-generator-0-orm"
+        },
+        "generator__1": {
+          "bc": "tex-generator-1-bc",
+          "n": "tex-generator-1-n",
+          "orm": "tex-generator-1-orm"
+        }
+      }
+    },
+    {
+      "id": "log-dead",
+      "asset": "props-desert",
+      "node": "log-dead",
+      "lods": 2,
+      "kind": "debris",
+      "colliders": [
+        {
+          "min": [
+            -1.976,
+            0,
+            -0.478
+          ],
+          "max": [
+            1.976,
+            1.005,
+            0.478
+          ]
+        }
+      ],
+      "visualBounds": {
+        "min": [
+          -2.026,
+          0,
+          -0.528
+        ],
+        "max": [
+          2.026,
+          1.055,
+          0.528
+        ]
+      },
+      "maxScale": 1.2,
+      "triangles": [
+        2488,
+        682
+      ],
+      "textures": {
+        "log-dead__0": {
+          "bc": "tex-log-dead-bc",
+          "n": "tex-log-dead-n",
+          "orm": "tex-log-dead-orm"
+        }
+      }
+    },
+    {
+      "id": "tyre-old",
+      "asset": "props-common",
+      "node": "tyre-old",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -0.3,
+          0,
+          -0.082
+        ],
+        "max": [
+          0.3,
+          0.6,
+          0.082
+        ]
+      },
+      "maxScale": 1.5,
+      "triangles": [
+        600,
+        150
+      ],
+      "textures": {
+        "tyre-old__0": {
+          "bc": "tex-tyre-old-bc",
+          "n": "tex-tyre-old-n",
+          "orm": "tex-tyre-old-orm"
+        }
+      }
+    },
+    {
+      "id": "cement-bag",
+      "asset": "props-common",
+      "node": "cement-bag",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -0.231,
+          0,
+          -0.35
+        ],
+        "max": [
+          0.231,
+          0.18,
+          0.35
+        ]
+      },
+      "maxScale": 1.5,
+      "triangles": [
+        400,
+        100
+      ],
+      "textures": {
+        "cement-bag__0": {
+          "bc": "tex-cement-bag-bc",
+          "n": "tex-cement-bag-n",
+          "orm": "tex-cement-bag-orm"
+        }
+      }
+    },
+    {
+      "id": "wheel-rim",
+      "asset": "props-industrial",
+      "node": "wheel-rim",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -0.202,
+          0,
+          -0.075
+        ],
+        "max": [
+          0.202,
+          0.405,
+          0.075
+        ]
+      },
+      "maxScale": 1.5,
+      "triangles": [
+        494,
+        426
+      ],
+      "textures": {
+        "wheel-rim__0": {
+          "bc": "tex-wheel-rim-bc",
+          "n": "tex-wheel-rim-n",
+          "orm": "tex-wheel-rim-orm"
+        }
+      }
+    },
+    {
+      "id": "cardboard-box",
+      "asset": "props-industrial",
+      "node": "cardboard-box",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -0.194,
+          0,
+          -0.258
+        ],
+        "max": [
+          0.194,
+          0.342,
+          0.258
+        ]
+      },
+      "maxScale": 1.5,
+      "triangles": [
+        398,
+        100
+      ],
+      "textures": {
+        "cardboard-box__0": {
+          "bc": "tex-cardboard-box-bc",
+          "n": "tex-cardboard-box-n",
+          "orm": "tex-cardboard-box-orm"
+        }
+      }
+    },
+    {
+      "id": "propane-tank",
+      "asset": "props-industrial",
+      "node": "propane-tank",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -0.169,
+          0,
+          -0.169
+        ],
+        "max": [
+          0.169,
+          0.554,
+          0.169
+        ]
+      },
+      "maxScale": 1.5,
+      "triangles": [
+        665,
+        677
+      ],
+      "textures": {
+        "propane-tank__0": {
+          "bc": "tex-propane-tank-bc",
+          "n": "tex-propane-tank-n",
+          "orm": "tex-propane-tank-orm"
+        }
+      }
+    },
+    {
+      "id": "stones-small",
+      "asset": "props-common",
+      "node": "stones-small",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -0.253,
+          0,
+          -0.48
+        ],
+        "max": [
+          0.253,
+          0.431,
+          0.48
+        ]
+      },
+      "maxScale": 1.5,
+      "triangles": [
+        300,
+        80
+      ],
+      "textures": {
+        "stones-small__0": {
+          "bc": "tex-stones-small-bc",
+          "n": "tex-stones-small-n",
+          "orm": "tex-stones-small-orm"
+        }
+      }
+    },
+    {
+      "id": "grass-dry",
+      "asset": "vegetation",
+      "node": "grass-dry",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -2.802,
+          0,
+          -0.163
+        ],
+        "max": [
+          2.802,
+          0.343,
+          0.163
+        ]
+      },
+      "maxScale": 1.6,
+      "triangles": [
+        600,
+        120
+      ],
+      "textures": {
+        "grass-dry__0": {
+          "bc": "tex-grass-dry-bc",
+          "n": "tex-grass-dry-n",
+          "orm": "tex-grass-dry-orm"
+        }
+      }
+    },
+    {
+      "id": "shrub-dry",
+      "asset": "vegetation",
+      "node": "shrub-dry",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -0.683,
+          0,
+          -0.076
+        ],
+        "max": [
+          0.683,
+          0.403,
+          0.076
+        ]
+      },
+      "maxScale": 1.4,
+      "triangles": [
+        495,
+        120
+      ],
+      "textures": {
+        "shrub-dry__0": {
+          "bc": "tex-shrub-dry-bc",
+          "n": "tex-shrub-dry-n",
+          "orm": "tex-shrub-dry-orm"
+        }
+      }
+    },
+    {
+      "id": "weed-low",
+      "asset": "vegetation",
+      "node": "weed-low",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -1.063,
+          0,
+          -0.145
+        ],
+        "max": [
+          1.063,
+          0.075,
+          0.145
+        ]
+      },
+      "maxScale": 1.5,
+      "triangles": [
+        868,
+        868
+      ],
+      "textures": {
+        "weed-low__0": {
+          "bc": "tex-weed-low-bc",
+          "n": "tex-weed-low-n",
+          "orm": "tex-weed-low-orm"
+        }
+      }
+    },
+    {
+      "id": "branches-dry",
+      "asset": "vegetation",
+      "node": "branches-dry",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -0.53,
+          0,
+          -0.65
+        ],
+        "max": [
+          0.53,
+          0.341,
+          0.65
+        ]
+      },
+      "maxScale": 1.3,
+      "triangles": [
+        2669,
+        2673
+      ],
+      "textures": {
+        "branches-dry__0": {
+          "bc": "tex-branches-dry-bc",
+          "n": "tex-branches-dry-n",
+          "orm": "tex-branches-dry-orm"
+        }
+      }
+    },
+    {
+      "id": "cliff",
+      "asset": "backdrop",
+      "node": "cliff",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -10.114,
+          0,
+          -3.297
+        ],
+        "max": [
+          10.114,
+          7.184,
+          3.297
+        ]
+      },
+      "maxScale": 4,
+      "triangles": [
+        4000,
+        1199
+      ],
+      "textures": {
+        "cliff__0": {
+          "bc": "tex-cliff-bc",
+          "n": "tex-cliff-n",
+          "orm": "tex-cliff-orm"
+        }
+      }
+    },
+    {
+      "id": "mountain",
+      "asset": "backdrop",
+      "node": "mountain",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -5.105,
+          0,
+          -2.623
+        ],
+        "max": [
+          5.105,
+          10.522,
+          2.623
+        ]
+      },
+      "maxScale": 6,
+      "triangles": [
+        3500,
+        999
+      ],
+      "textures": {
+        "mountain__0": {
+          "bc": "tex-mountain-bc",
+          "n": "tex-mountain-n",
+          "orm": "tex-mountain-orm"
+        }
+      }
+    },
+    {
+      "id": "tree-quiver",
+      "asset": "backdrop",
+      "node": "tree-quiver",
+      "lods": 2,
+      "kind": "visual",
+      "colliders": [],
+      "visualBounds": {
+        "min": [
+          -0.591,
+          0,
+          -0.484
+        ],
+        "max": [
+          0.591,
+          2.715,
+          0.484
+        ]
+      },
+      "maxScale": 3,
+      "triangles": [
+        2998,
+        1342
+      ],
+      "textures": {
+        "tree-quiver__0": {
+          "bc": "tex-tree-quiver-0-bc",
+          "n": "tex-tree-quiver-0-n",
+          "orm": "tex-tree-quiver-0-orm"
+        },
+        "tree-quiver__1": {
+          "bc": "tex-tree-quiver-1-bc",
+          "n": "tex-tree-quiver-1-n",
+          "orm": "tex-tree-quiver-1-orm"
+        }
+      }
+    }
+  ],
+  "sets": {
+    "sand": {
+      "bc": "tex-sand-bc",
+      "n": "tex-sand-n",
+      "orm": "tex-sand-orm",
+      "maps": [
+        "desert-compound"
+      ]
+    },
+    "sandstone": {
+      "bc": "tex-sandstone-bc",
+      "n": "tex-sandstone-n",
+      "orm": "tex-sandstone-orm",
+      "maps": [
+        "desert-compound"
+      ]
+    },
+    "adobe": {
+      "bc": "tex-adobe-bc",
+      "n": "tex-adobe-n",
+      "orm": "tex-adobe-orm",
+      "maps": [
+        "desert-compound"
+      ]
+    },
+    "wood-planks": {
+      "bc": "tex-wood-planks-bc",
+      "n": "tex-wood-planks-n",
+      "orm": "tex-wood-planks-orm",
+      "maps": "all"
+    },
+    "concrete": {
+      "bc": "tex-concrete-bc",
+      "n": "tex-concrete-n",
+      "orm": "tex-concrete-orm",
+      "maps": "all"
+    },
+    "concrete-floor": {
+      "bc": "tex-concrete-floor-bc",
+      "n": "tex-concrete-floor-n",
+      "orm": "tex-concrete-floor-orm",
+      "maps": [
+        "industrial-warehouse"
+      ]
+    },
+    "corrugated": {
+      "bc": "tex-corrugated-bc",
+      "n": "tex-corrugated-n",
+      "orm": "tex-corrugated-orm",
+      "maps": [
+        "industrial-warehouse"
+      ]
+    },
+    "rust-metal": {
+      "bc": "tex-rust-metal-bc",
+      "n": "tex-rust-metal-n",
+      "orm": "tex-rust-metal-orm",
+      "maps": "all"
+    }
+  }
+}

@@ -14,6 +14,7 @@ import type { BotView, PlayerView, SimEvent, SimSnapshot, WeaponId } from '../..
 import { getMap } from '../../src/maps';
 import type { MapId } from '../../src/contracts';
 import { createGameRendererWith } from '../../src/render/game-renderer';
+import type { AssetPort } from '../../src/render/assets/types';
 import type { GameRenderer, GlHost } from '../../src/render/types';
 
 export interface FakeHost extends GlHost {
@@ -26,6 +27,7 @@ export interface FakeHost extends GlHost {
   /** When false, frame calls are not recorded (allocation probe). */
   recording: boolean;
   dpr: number;
+  exposure: number;
   loseContext(): void;
   restoreContext(): void;
   /** Scenes passed to the most recent render() pair. */
@@ -99,6 +101,14 @@ export function createFakeHost(
       restored.add(cb);
       return () => restored.delete(cb);
     },
+    bindKit(kit) {
+      calls.push('bindKit');
+      kit.bind({ renderer: host });
+    },
+    setExposure(x) {
+      host.exposure = x;
+    },
+    exposure: 1,
     dispose() {
       calls.push('dispose');
     },
@@ -127,13 +137,22 @@ export interface Harness {
 }
 
 export function createHarness(
-  opts: { maxTextureSize?: number; reducedMotion?: boolean; noWebgl?: boolean } = {},
+  opts: {
+    maxTextureSize?: number;
+    reducedMotion?: boolean;
+    noWebgl?: boolean;
+    assets?: (d: Diagnostics) => AssetPort;
+  } = {},
 ): Harness {
   const sink: { code: string; detail?: unknown }[] = [];
   const diagnostics = createDiagnostics((code, detail) => sink.push({ code, detail }));
   const host = createFakeHost(opts);
   const renderer = createGameRendererWith(
-    { diagnostics, reducedMotion: opts.reducedMotion === true },
+    {
+      diagnostics,
+      reducedMotion: opts.reducedMotion === true,
+      ...(opts.assets === undefined ? {} : { assets: opts.assets(diagnostics) }),
+    },
     {
       hostFactory: () => (opts.noWebgl === true ? null : host),
       yieldTask: () => Promise.resolve(),

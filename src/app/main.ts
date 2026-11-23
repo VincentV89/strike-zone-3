@@ -8,20 +8,30 @@
  * The test seams load only through the single guarded import below. `vite
  * build` replaces import.meta.env.MODE with "production", so the branch is
  * dead and no src/dev chunk is emitted (check:seams verifies dist/).
+ *
+ * Graphics uplift (BR-G-02, security-design §2.1): the second and last import() is the
+ * memoised asset-kit loader at module scope. It runs only when the renderer calls
+ * loadKit(), which it does only after a successful WebGL2 init(). main.ts also owns the
+ * asset fetch (BR-G-01) and the CSP violation signal (BR-G-85).
  */
 import { createProfiler } from '../core';
 import { createGameRenderer } from '../render';
 import { createHud } from '../ui/hud';
 import { createApp, type App, type AppDeps } from './app';
+import { createAssetFetch, memo } from './asset-fetch';
 import { createAppDiagnostics } from './diagnostics';
 import { createFeatures } from './features';
 import { defaultRequestFrame } from './frame-loop';
 import { createPointerLockPort } from './pointer-lock';
 import type { BrowserCaps, PointerLockFactory } from './ports';
+import { createScope } from './scope';
 import { createSeedSource, type GetRandomValues } from './seed';
 import type { SchedulerLike } from './yield';
 
 const VERSION = '0.1.0';
+
+/** The lazy asset kit (RA-G2). Memoised, including a failure (BR-G-12). */
+const loadKit = memo(() => import('../render/assets/kit'));
 
 function hasWebGl2(): boolean {
   if (typeof WebGL2RenderingContext === 'undefined') return false;
@@ -78,6 +88,18 @@ async function boot(root: HTMLElement): Promise<void> {
   const { audio, features } = createFeatures(diag);
   let lock: PointerLockFactory = (scope) => createPointerLockPort(document, scope, diag);
   const afterStart: ((app: App) => void)[] = [];
+  const pageScope = createScope();
+  // BR-G-85: a CSP block is reported once, with no detail.
+  pageScope.on(document, 'securitypolicyviolation', () => {
+    diag.warnOnce('app/csp-violation');
+  });
+  const fetchBytes = createAssetFetch({
+    fetch: (url, init) => fetch(url, init),
+    delay: (ms) =>
+      new Promise<void>((resolve) => {
+        pageScope.timeout(resolve, ms);
+      }),
+  });
 
   if (import.meta.env.MODE === 'test') {
     const dev = await import('../dev');
@@ -104,7 +126,11 @@ async function boot(root: HTMLElement): Promise<void> {
     doc: document,
     win: window,
     caps,
-    renderer: createGameRenderer({ diagnostics: diag, reducedMotion: caps.reducedMotion }),
+    renderer: createGameRenderer({
+      diagnostics: diag,
+      reducedMotion: caps.reducedMotion,
+      assets: { fetchBytes, loadKit },
+    }),
     hud: createHud({ diagnostics: diag, reducedMotion: caps.reducedMotion }),
     audio,
     features,

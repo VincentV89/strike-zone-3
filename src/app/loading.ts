@@ -1,7 +1,9 @@
 /**
  * Loading pipeline (business-logic-model-app-shell §5, story-loading-screen).
- * Four steps with real progress: map (geometry + renderer.buildMap), nav
- * (the nav bake), bots (simulation, stats, actors) and shaders (precompile).
+ * Five steps with real progress: map (geometry + renderer.buildMap), nav
+ * (the nav bake), assets (graphics uplift: downloads start first and overlap map and
+ * nav, then applyAssets), bots (simulation, stats, actors) and shaders (precompile).
+ * Asset failures never fail the step (BR-G-13); only a fault in the loader does.
  * map and nav share one prepareMapAsync call and run as one group. Each
  * step boundary is a fault boundary: a throw, a rejection or an expected
  * failure becomes `failed(step)`, never an uncaught error (RL-AS-05).
@@ -23,7 +25,10 @@ export type PrepareFn = (
 
 export interface LoaderDeps {
   readonly prepare: PrepareFn;
-  readonly renderer: Pick<GameRenderer, 'buildMap' | 'precompile' | 'disposeRound'>;
+  readonly renderer: Pick<
+    GameRenderer,
+    'buildMap' | 'precompile' | 'disposeRound' | 'loadAssets' | 'applyAssets'
+  >;
   readonly createSession: (
     prepared: PreparedMap,
   ) => Result<RoundSession, 'SPAWN_ALLOCATION_FAILED'>;
@@ -61,6 +66,8 @@ export function createLoader(deps: LoaderDeps): Loader {
   let mapBuilt = false;
   let session: RoundSession | null = null;
   let current: LoadingStepId = 'map';
+  let assetsApplied = false;
+  let assetsP: Promise<unknown> | null = null;
 
   const emit = (): void => {
     deps.onProgress(progress);
@@ -83,6 +90,30 @@ export function createLoader(deps: LoaderDeps): Loader {
     dropSession();
     if (mapBuilt) deps.renderer.disposeRound();
     mapBuilt = false;
+    assetsApplied = false;
+  }
+
+  function startAssets(map: MapId, signal: AbortSignal): Promise<unknown> {
+    return deps.renderer.loadAssets(map, signal, (p) => {
+      if (progress.assets.state !== 'done') set('assets', p, 'running');
+    });
+  }
+
+  async function runAssets(map: MapId, signal: AbortSignal): Promise<LoadOutcome | null> {
+    current = 'assets';
+    set('assets', progress.assets.progress, 'running');
+    try {
+      await (assetsP ?? startAssets(map, signal)); // joins the downloads started with map
+      if (isAborted(signal)) return aborted();
+      deps.renderer.applyAssets();
+      assetsApplied = true;
+    } catch {
+      return fail('assets', MESSAGES.stepFailed);
+    } finally {
+      assetsP = null;
+    }
+    set('assets', 1, 'done');
+    return null;
   }
 
   function fail(step: LoadingStepId, message: string, code = 'app/load-failed'): LoadOutcome {
@@ -181,7 +212,7 @@ export function createLoader(deps: LoaderDeps): Loader {
         preparedFor = null;
         from = 'map';
       }
-      const start = from === 'nav' ? 'map' : from;
+      const start = from === 'nav' || from === 'assets' ? 'map' : from;
       const startIdx = LOADING_STEPS.indexOf(start);
       for (const id of LOADING_STEPS.slice(startIdx)) {
         progress[id].progress = 0;
@@ -190,7 +221,15 @@ export function createLoader(deps: LoaderDeps): Loader {
       emit();
       if (isAborted(signal)) return aborted();
       if (start === 'map') {
+        // Downloads start first and overlap map and nav (BR-G-09).
+        const started = startAssets(map, signal);
+        assetsP = started;
+        started.catch(() => undefined);
         const r = await runMapGroup(map, signal);
+        if (r !== null) return r;
+      }
+      if (!assetsApplied) {
+        const r = await runAssets(map, signal);
         if (r !== null) return r;
       }
       if (start === 'map' || start === 'bots') {
@@ -208,6 +247,7 @@ export function createLoader(deps: LoaderDeps): Loader {
     current: () => current,
     reset() {
       dropScene();
+      assetsP = null;
       progress = createLoadingProgress();
       current = 'map';
     },

@@ -81,6 +81,12 @@ export function createGlHost(canvas: HTMLCanvasElement): GlHost | null {
     onContextRestored(cb) {
       return listen('webglcontextrestored', cb, false);
     },
+    bindKit(kit) {
+      kit.bind({ renderer: gl });
+    },
+    setExposure(x) {
+      gl.toneMappingExposure = Number.isFinite(x) && x > 0 ? x : 1;
+    },
     dispose() {
       gl.dispose();
     },

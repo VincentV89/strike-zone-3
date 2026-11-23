@@ -283,7 +283,9 @@ function toLoadingError(
 
 /** Retry after a loading failure resumes at the failed step; map and nav run as one group. */
 export function retryStepFor(step: LoadingStepId): LoadingStepId {
-  return step === 'nav' ? 'map' : step;
+  // nav and assets restart at map (BR-G-14a): map and nav are one group, and assets are
+  // re-applied from the library after the rebuild, with zero fetches for ready entries.
+  return step === 'nav' || step === 'assets' ? 'map' : step;
 }
 
 export function transition(m: AppModel, e: AppEvent): Transition {

@@ -20,6 +20,7 @@ function host(): SeamHost & { log: string[] } {
     setSeed: (s) => log.push(`seed:${String(s)}`),
     fastForward: (n) => log.push(`ff:${String(n)}`),
     diagnostics: () => ({ 'app/frame-fault': 1 }),
+    renderStats: () => ({ assetFallbacks: 0, envActive: true, textureFormats: [37808] }),
   };
 }
 
@@ -32,7 +33,15 @@ describe('installTestSeams', () => {
     expect(desc).toMatchObject({ writable: false, configurable: false });
     expect(Object.isFrozen(api)).toBe(true);
     expect(Object.keys(api).sort()).toEqual(
-      ['diagnostics', 'fastForward', 'marker', 'setSeed', 'snapshot', 'state'].sort(),
+      [
+        'diagnostics',
+        'fastForward',
+        'marker',
+        'renderStats',
+        'setSeed',
+        'snapshot',
+        'state',
+      ].sort(),
     );
     api.setSeed(5);
     api.fastForward(60);

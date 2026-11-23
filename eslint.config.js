@@ -315,21 +315,35 @@ const RENDER_BANNED_GLOBALS = [
   'window',
 ].map((name) => ({ name, message: `${name} is banned in src/render (SEC-P-01/02/07/11).` }));
 
-const RENDER_PROPERTIES = [
+const RENDER_PROPERTIES_NO_JSON = [
   ...SRC_RESTRICTED_PROPERTIES,
   { object: 'Math', property: 'random', message: 'Use hash32 or a seeded Rng (SEC-P-07).' },
   { object: 'performance', property: 'now', message: 'Visuals run on render time (SEC-P-07).' },
   { object: 'document', property: 'cookie', message: 'No storage in src/render (SEC-P-02).' },
 ];
+/** JSON.parse only in src/render/assets/glb-check.ts (security-design-graphics-uplift §3). */
+const RENDER_PROPERTIES = [
+  ...RENDER_PROPERTIES_NO_JSON,
+  {
+    object: 'JSON',
+    property: 'parse',
+    message: 'JSON.parse is allowed only in src/render/assets/glb-check.ts (SR-G-08).',
+  },
+];
 
-/** Shared by both render blocks; UI_SYNTAX already carries ENV_RESTRICTION. */
+/** Shared by the render blocks; UI_SYNTAX already carries ENV_RESTRICTION. */
+const RENDER_IMPORT_EXPRESSION_BAN = {
+  selector: 'ImportExpression',
+  message: 'No dynamic import() in src/render (SEC-P-01).',
+};
+const RENDER_LOADER_SPECIFIER_BAN = {
+  selector: 'ImportSpecifier[imported.name=/Loader$/]',
+  message: 'Loaders are allowed only in src/render/assets/kit.ts (BR-G-03).',
+};
 const RENDER_SYNTAX_BASE = [
   ...UI_SYNTAX,
-  { selector: 'ImportExpression', message: 'No dynamic import() in src/render (SEC-P-01).' },
-  {
-    selector: 'ImportSpecifier[imported.name=/Loader$/]',
-    message: 'No three.js loaders: textures are procedural DataTextures (SEC-P-01).',
-  },
+  RENDER_IMPORT_EXPRESSION_BAN,
+  RENDER_LOADER_SPECIFIER_BAN,
 ];
 
 /** Lifted only for gl-host.ts (SEC-P-04). */
@@ -353,6 +367,46 @@ const RENDER_IMPORTS = {
     },
   ],
 };
+
+/** The four addon modules the asset kit may import (BR-G-03, SR-G-05). */
+const KIT_ADDONS = [
+  'three/addons/loaders/GLTFLoader.js',
+  'three/addons/loaders/KTX2Loader.js',
+  'three/addons/libs/meshopt_decoder.module.js',
+  'three/addons/utils/SkeletonUtils.js',
+];
+const KIT_IMPORTS = {
+  patterns: [
+    TEST_DOM_IMPORTS,
+    {
+      group: [
+        // gitignore semantics: a file is re-included only after its folder is (security-design §2.2).
+        'three/addons/*',
+        '!three/addons/loaders',
+        'three/addons/loaders/*',
+        '!three/addons/libs',
+        'three/addons/libs/*',
+        '!three/addons/utils',
+        'three/addons/utils/*',
+        ...KIT_ADDONS.map((p) => `!${p}`),
+        'three/examples/*',
+        'three/webgpu',
+        'three/tsl',
+      ],
+      message:
+        'The kit may import only GLTFLoader, KTX2Loader, meshopt_decoder and SkeletonUtils (BR-G-03).',
+    },
+  ],
+};
+/** Block C keeps the listener ban but lets kit.ts name loaders and WebGLRenderer (BR-G-04). */
+const KIT_SYNTAX = [
+  ...UI_SYNTAX,
+  RENDER_IMPORT_EXPRESSION_BAN,
+  {
+    selector: 'CallExpression[callee.property.name=/^(add|remove)EventListener$/]',
+    message: 'Only gl-host.ts touches the canvas (SEC-P-04).',
+  },
+];
 
 /**
  * app-shell (security-design-app-shell SD-AS-05/06). src/app, src/input and
@@ -427,6 +481,7 @@ export default tseslint.config(
       '.kiro-data/**',
       '.aidlc/**',
       '.kiro/**',
+      'tools/asset-pipeline/**',
     ],
   },
   js.configs.recommended,
@@ -460,10 +515,11 @@ export default tseslint.config(
             'src/sim/stats/__probe__.ts',
             'src/input/__probe__.ts',
             'src/dev/__probe__.ts',
+            'src/render/assets/__probe__.ts',
           ],
           // The bot-ai probes make one ring-lint process open more than the default 8
           // default-project files (BR-AI-91, SD-AI-05).
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 24,
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 25,
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -576,6 +632,22 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', ...RENDER_SYNTAX_BASE] },
   },
   {
+    // Block C (security-design-graphics-uplift §2.2): the asset kit's addon allow-list.
+    // Spreads every list because flat config replaces rule options (override trap).
+    files: ['src/render/assets/kit.ts', 'src/render/assets/__probe__.ts'],
+    rules: {
+      'no-restricted-globals': ['error', ...RENDER_BANNED_GLOBALS],
+      'no-restricted-properties': ['error', ...RENDER_PROPERTIES],
+      'no-restricted-syntax': ['error', ...KIT_SYNTAX],
+      'no-restricted-imports': ['error', KIT_IMPORTS],
+    },
+  },
+  {
+    // glb-check.ts is the only render file that parses JSON (the GLB JSON chunk, SR-G-08).
+    files: ['src/render/assets/glb-check.ts'],
+    rules: { 'no-restricted-properties': ['error', ...RENDER_PROPERTIES_NO_JSON] },
+  },
+  {
     // menus-settings: network, storage, timer and listener bans. Spreads the
     // shared lists because flat config replaces rule options (override trap).
     files: MENUS_FILES,
@@ -671,7 +743,8 @@ export default tseslint.config(
     // main.ts reads storage once and holds the single guarded seam import (SD-AS-01, SD-AS-08).
     files: ['src/app/main.ts'],
     rules: {
-      'no-restricted-globals': ['error', ...appGlobals(APP_STORAGE_NAMES)],
+      // main.ts also owns the asset fetch (BR-G-01).
+      'no-restricted-globals': ['error', ...appGlobals([...APP_STORAGE_NAMES, 'fetch'])],
       'no-restricted-properties': ['error', ...APP_PROPERTIES],
       'no-restricted-syntax': ['error', ...appSyntax({ dynamicImport: false })],
     },

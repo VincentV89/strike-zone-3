@@ -161,6 +161,61 @@ const NEGATIVE: Record<MapDataIssueCode, Mutation> = {
   'maps/lighting-invalid': (d) => {
     d.lighting.sunDir = { x: 0, y: 1, z: 0 };
   },
+  // Graphics uplift dressing (BR-G-21..33).
+  'maps/prop-unknown-model': (d) => {
+    const p = d.dressing?.props[0];
+    if (p !== undefined) p[0] = 'no-such-prop';
+  },
+  'maps/prop-bad-transform': (d) => {
+    const p = d.dressing?.props[0];
+    if (p !== undefined) p[5] = 9;
+  },
+  'maps/prop-near-spawn': (d) => {
+    const s = d.solids.find((x) => x.prop !== undefined);
+    const sp = at(d.spawns, 0);
+    if (s !== undefined)
+      s.box = {
+        min: { x: sp.pos.x + 0.5, y: 0, z: sp.pos.z },
+        max: { x: sp.pos.x + 0.9, y: 0.5, z: sp.pos.z + 0.4 },
+      };
+  },
+  'maps/prop-near-cover': (d) => {
+    const s = d.solids.find((x) => x.prop !== undefined);
+    const c = at(d.cover, 0);
+    if (s !== undefined) {
+      s.box = {
+        min: { x: c.pos.x + 0.6, y: c.pos.y, z: c.pos.z },
+        max: { x: c.pos.x + 1, y: c.pos.y + 0.5, z: c.pos.z + 0.4 },
+      };
+    }
+  },
+  'maps/prop-near-hint': (d) => {
+    const s = d.solids.find((x) => x.prop !== undefined);
+    const h = d.navHints.find((x) => x.kind === 'patrol');
+    if (s !== undefined && h !== undefined) {
+      s.box = {
+        min: { x: h.pos.x + 0.5, y: h.pos.y, z: h.pos.z },
+        max: { x: h.pos.x + 0.9, y: h.pos.y + 0.5, z: h.pos.z + 0.4 },
+      };
+    }
+  },
+  'maps/prop-near-ramp': (d) => {
+    const s = d.solids.find((x) => x.prop !== undefined);
+    const r = at(d.ramps, 0);
+    if (s !== undefined)
+      s.box = {
+        min: { x: r.maxX + 1, y: 0, z: r.minZ },
+        max: { x: r.maxX + 1.4, y: 0.5, z: r.minZ + 0.4 },
+      };
+  },
+  'maps/tall-vegetation-in-play': (d) => {
+    const r = d.dressing?.scatter[0];
+    if (r !== undefined) r.scale = [1, 9];
+  },
+  'maps/dressing-invalid': (d) => {
+    const b = d.dressing?.backdrop[0];
+    if (b !== undefined) b.pos = { x: 0, y: 0, z: 0 };
+  },
 };
 
 describe('negative cases (BR-M-93)', () => {

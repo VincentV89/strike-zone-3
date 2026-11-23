@@ -657,7 +657,7 @@ export const CHECKS: readonly Check[] = [
     source: '§13-deployment',
     stories: ['story-post-deploy-smoke'],
     requirements: ['req-deploy-verification'],
-    refs: [sm('SM-4'), sm('SM-4b'), sm('SM-7')],
+    refs: [sm('SM-4'), sm('SM-4b'), sm('SM-4c'), sm('SM-7')],
   },
   {
     id: 'DV-03',
@@ -1004,7 +1004,7 @@ export const LIMITATIONS: readonly KnownLimitation[] = [
   },
   {
     id: 'KL-02',
-    text: 'On the Industrial Warehouse a bot can stay stuck for more than 5 s (bot-ai harness worst span 720 ticks against 300). The cause is a collision-nav defect: sweepClear accepts segments at ramp sides that moveCapsule blocks, and only the watchdog snap frees the bot. No bot stays stuck unresolved.',
+    text: 'On the Industrial Warehouse a bot can stay stuck for more than 5 s (bot-ai harness worst span 540 ticks against 300; it was 720 before the graphics uplift added prop colliders). The cause is a collision-nav defect: sweepClear accepts segments at ramp sides that moveCapsule blocks, and only the watchdog snap frees the bot. No bot stays stuck unresolved.',
     relatesTo: ['GV-15m', 'req-bot-navigation'],
   },
   {
@@ -1036,5 +1036,49 @@ export const LIMITATIONS: readonly KnownLimitation[] = [
     id: 'KL-08',
     text: 'Browser end-to-end tests run in Playwright headless Chromium with SwiftShader WebGL and the pointer-lock bypass seam against the dist-test bundle, not against production dist/ and not in Firefox or Safari.',
     relatesTo: ['GV-01', 'GV-28', 'req-browser-support'],
+  },
+  {
+    id: 'KL-09',
+    text: 'Graphics uplift rule changes (disclosed per req-gfx-disclosure): third-party CC0 binary assets ship under assets/ with ProvenanceEntry v2 (Poly Haven, Quaternius; credits in docs/CREDITS.md); the src/render loader ban became an allow-list of GLTFLoader, KTX2Loader, the meshopt decoder and SkeletonUtils in src/render/assets/kit.ts, loaded by a second memoised import() in main.ts; large props collide and block sight and shots, so the seed-42 golden was regenerated; world ceilings rose to 80/100/120 calls and 300k/600k/1M triangles; High shadow casters rose to 32.',
+    relatesTo: [
+      'req-gfx-disclosure',
+      'req-gfx-asset-provenance',
+      'req-gfx-loader-allowlist',
+      'req-gfx-prop-collision',
+    ],
+  },
+  {
+    id: 'KL-10',
+    text: "CSP rule change: script-src adds 'wasm-unsafe-eval' and 'unsafe-eval', and worker-src 'self' blob: is added. 'unsafe-eval' was not in the approved RA-G3 set: three 0.187's Basis transcoder (an Emscripten embind build) calls new Function in its worker, and the requester approved adding it (CG-G-Q1 = A, 2026-11-20). img-src blob: was approved but is not needed and is not added.",
+    relatesTo: ['req-gfx-csp-change', 'req-gfx-disclosure'],
+  },
+  {
+    id: 'KL-11',
+    text: 'The near-camera detail layer (BR-G-71) was cut first in the agreed cut order: detailLayer is false on every preset. Near-camera resolution comes from 2048 px viewmodel and bot textures with mip-drop tiers. Rule-generated facade geometry was replaced by PBR facade texture sets plus prop dressing, the 512 px contact AO map by none (dressing receives the sun shadow), and the dressing chunk-cell split and the up-tier refetch were not built.',
+    relatesTo: [
+      'req-gfx-near-camera-hires',
+      'req-gfx-environment-dressing',
+      'req-gfx-lod-instancing',
+    ],
+  },
+  {
+    id: 'KL-12',
+    text: 'The bot character is a stylised low-poly CC0 soldier (Quaternius) with a rifle skinned to the hand; the source pack has no crouch clips, so crouch-idle and crouch-walk are derived offline from its SitDown pose. Viewmodels are low-poly CC0 Quaternius weapons with a baked colour palette, without normal maps.',
+    relatesTo: ['req-gfx-bot-models', 'req-gfx-weapon-models'],
+  },
+  {
+    id: 'KL-13',
+    text: 'Compressed equirectangular KTX2 skies do not convert to a background cube in three 0.187, so the PMREM environment (cube UV, 256 px faces) is also the sky background; the sky is softer than the source photo.',
+    relatesTo: ['req-gfx-lighting-atmosphere'],
+  },
+  {
+    id: 'KL-14',
+    text: 'The entry chunk is 204,218 B brotli against the 204,800 B check:seams limit (582 B headroom); asset code that runs after the kit loads lives in the lazy kit chunk (47,749 B brotli, 174,296 B minified, over the 150 KB reported target and under the 2x ceiling). Screenshot sign-off against the reference image (MT-G1) and the 60 FPS cells on GTX 1660 / RX 580 class hardware (MT-G2, MT-G3) are manual and not recorded yet.',
+    relatesTo: [
+      'req-gfx-download-budget',
+      'req-gfx-visual-signoff',
+      'req-gfx-fps-medium',
+      'req-gfx-fps-low',
+    ],
   },
 ];

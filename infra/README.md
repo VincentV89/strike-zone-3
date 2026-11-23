@@ -12,7 +12,7 @@ One AWS CDK v2 TypeScript app (`cdk.json` at the repository root, code in `infra
 | `infra/lib/web-asset.ts`        | The single web asset: build mode (local `npm run build:web`) or prebuilt mode                  |
 | `infra/lib/headers.ts`          | The CSP and the security headers policy                                                        |
 | `infra/lib/aspects.ts`          | `ScopeInvalidationAspect`                                                                      |
-| `infra/lib/strikezone-stack.ts` | Bucket, distribution, the two BucketDeployments, log groups, outputs                           |
+| `infra/lib/strikezone-stack.ts` | Bucket, distribution, the five BucketDeployments, log groups, outputs                          |
 | `tests/infra/`                  | CDK assertion tests; each test name starts with its requirement id (SEC-H, REL-H, PERF-H, ...) |
 | `tests/fixtures/web-dist/`      | Text-only prebuilt bundle the tests synthesise against                                         |
 
@@ -52,11 +52,11 @@ Stack outputs: `DistributionUrl`, `DistributionId`, `BucketName`.
 
 `.github/workflows/ci.yml` runs on pull requests to `main`, pushes to `main` and manual dispatch. `tests/scripts/ci-workflow.test.ts` (inside `npm run verify`) pins its shape.
 
-| Job      | When                                      | Credentials              | What it does                                                                                                                                                                                                                                                                           |
-| -------- | ----------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `verify` | every run                                 | none (`contents: read`)  | `npm ci && npm run verify`, advisory `npm run audit`; uploads `reports/` and `coverage/` (14 days) and the verified `dist/` (7 days)                                                                                                                                                   |
-| `e2e`    | every run, in parallel with verify        | none (`contents: read`)  | installs headless Chromium, `npm run e2e` (seeded rounds and Play Again on both maps against `dist-test/`)                                                                                                                                                                             |
-| `deploy` | push to `main` only, after verify and e2e | GitHub OIDC, 1 h session | `cdk deploy StrikeZone` in prebuilt mode with the exact `dist/` verify built and checked, writes the `DistributionUrl` to the run summary, then `npm run smoke` (SM-1..SM-9) and `npm run smoke:browser` (opens the URL, clicks Start Game and the Ready gate, waits for the live HUD) |
+| Job      | When                                      | Credentials              | What it does                                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------- | ----------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify` | every run                                 | none (`contents: read`)  | `npm ci && npm run verify`, advisory `npm run audit`; uploads `reports/` and `coverage/` (14 days) and the verified `dist/` (7 days)                                                                                                                                                                                                                                                                                      |
+| `e2e`    | every run, in parallel with verify        | none (`contents: read`)  | installs headless Chromium, `npm run e2e` (seeded rounds and Play Again on both maps against `dist-test/`)                                                                                                                                                                                                                                                                                                                |
+| `deploy` | push to `main` only, after verify and e2e | GitHub OIDC, 1 h session | `cdk deploy StrikeZone` in prebuilt mode with the exact `dist/` verify built and checked, writes the `DistributionUrl` to the run summary, then `npm run smoke` (SM-1..SM-9; SM-4c fetches every `.glb`, `.ktx2` and `.wasm` of the downloaded `dist/` and checks type, cache, nosniff, length and magic bytes) and `npm run smoke:browser` (opens the URL, clicks Start Game and the Ready gate, waits for the live HUD) |
 
 Deploys never overlap (`deploy-strikezone` concurrency group, never cancelled mid-run). Every action is pinned to a commit SHA.
 
@@ -115,3 +115,9 @@ A traffic flood is billed per request and is an accepted risk. The account owner
 - No WAF, so floods become cost (see above).
 - The staged bundles in the bootstrap bucket survive destroy.
 - `ScopeInvalidationAspect` depends on the shape of CDK's generated statement. A shape change fails synth or the tests; review it on every aws-cdk-lib bump.
+
+## Graphics uplift hosting notes
+
+- The bundle grows from about 1 MB to about 18 MB (`dist/assets` .glb, .ktx2 and the Basis transcoder). `WebAssets` publishes js and css; `WebModels` (`model/gltf-binary`), `WebTextures` (`image/ktx2`) and `WebWasm` (`application/wasm`) publish the binaries with an explicit Content-Type, because the deploy Lambda's Python mimetypes table has no `.glb` or `.ktx2`. `WebIndex` depends on all four. Every deployment uses `memoryLimit: 512`, so they share one handler Lambda; the first deploy after this change replaces it once.
+- The CSP lives in `infra/lib/policy.ts` (no aws-cdk-lib import) and is shared by CloudFront, the infra tests, smoke SM-3 and the e2e preview server. It adds `'unsafe-eval' 'wasm-unsafe-eval'` to `script-src` and `worker-src 'self' blob:` for the KTX2 transcoder worker.
+- The SPA fallback answers a missing hashed file with `200 text/html`. The AssetPort rejects `text/html` and the kit checks magic bytes, so a missing asset falls back to the procedural visual instead of breaking the round.
